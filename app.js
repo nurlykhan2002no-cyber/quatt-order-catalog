@@ -7,7 +7,7 @@ const state = {
   session:null, role:"guest", email:"",
   customerMode:false, categories:[], products:[], images:[], staff:[],
   cat:"all", q:"", brand:"all", max:"", sort:"Сначала новые",
-  editing:null, formImages:[], cart:[], orders:[]
+  editing:null, formImages:[], cart:[], orders:[], sellerNames:[], selectedSellerId:null, orderTab:"active", paidSeenReady:false
 };
 
 const el = {
@@ -34,14 +34,16 @@ const el = {
   manageDialog:$("manageDialog"), staffSection:$("staffSection"), staffForm:$("staffForm"),
   staffEmail:$("staffEmail"), staffRole:$("staffRole"), staffList:$("staffList"),
   categoryForm:$("categoryForm"), newCategoryName:$("newCategoryName"), categoryManager:$("categoryManager"),
+  sellerNameForm:$("sellerNameForm"), newSellerName:$("newSellerName"), sellerNamesList:$("sellerNamesList"),
   toastHost:$("toastHost"),
   ordersBtn:$("ordersBtn"), ordersBadge:$("ordersBadge"), myOrdersBtn:$("myOrdersBtn"),
+  sellerPickerWrap:$("sellerPickerWrap"), sellerPicker:$("sellerPicker"),
   cartBtn:$("cartBtn"), cartBadge:$("cartBadge"), cartDialog:$("cartDialog"), cartItems:$("cartItems"),
   cartTotal:$("cartTotal"), checkoutBtn:$("checkoutBtn"), checkoutDialog:$("checkoutDialog"),
   checkoutForm:$("checkoutForm"), clientName:$("clientName"), clientPhone:$("clientPhone"),
   orderNote:$("orderNote"), initialStatus:$("initialStatus"),
   ordersDialog:$("ordersDialog"), ordersDialogTitle:$("ordersDialogTitle"),
-  ordersDialogSub:$("ordersDialogSub"), ordersList:$("ordersList")
+  ordersDialogSub:$("ordersDialogSub"), ordersList:$("ordersList"), orderTabs:$("orderTabs")
 };
 
 const isAdmin = () => ["owner","admin"].includes(state.role);
@@ -81,16 +83,32 @@ async function loadData(){
     let prodQ;
     if(isAdmin()) prodQ=supabase.from("products").select("*").order("created_at",{ascending:false});
     else prodQ=supabase.rpc("get_public_products");
-    const [cats,imgs,prods]=await Promise.all([catQ,imgQ,prodQ]);
-    if(cats.error)throw cats.error;if(imgs.error)throw imgs.error;if(prods.error)throw prods.error;
-    state.categories=cats.data||[];state.images=imgs.data||[];state.products=prods.data||[];
+    const sellersQ=state.session
+      ? supabase.from("seller_names").select("*").order("sort_order").order("name")
+      : Promise.resolve({data:[],error:null});
+    const [cats,imgs,prods,sellers]=await Promise.all([catQ,imgQ,prodQ,sellersQ]);
+    if(cats.error)throw cats.error;if(imgs.error)throw imgs.error;if(prods.error)throw prods.error;if(sellers.error)throw sellers.error;
+    state.categories=cats.data||[];state.images=imgs.data||[];state.products=prods.data||[];state.sellerNames=sellers.data||[];
+    syncSelectedSeller();
     render();
   }catch(e){
     console.error(e);
     el.catalogGrid.classList.add("hidden");
     el.stateBox.classList.remove("hidden");
-    el.stateBox.innerHTML=`<h2>Не удалось открыть каталог</h2><p>${esc(e.message||e)}</p><p class="fine">Если это первый запуск V2, сначала выполните файл SUPABASE_SETUP_V2.sql в Supabase.</p>`;
+    el.stateBox.innerHTML=`<h2>Не удалось открыть каталог</h2><p>${esc(e.message||e)}</p><p class="fine">Если вы только что обновили каталог, сначала выполните SUPABASE_UPDATE_V2_3.sql.</p>`;
   }
+}
+
+function sellerSelectionKey(){return `quatt-seller-name:${state.email||"shared"}`;}
+function selectedSeller(){return state.sellerNames.find(x=>x.id===state.selectedSellerId)||null;}
+function syncSelectedSeller(){
+  if(!isSeller()){state.selectedSellerId=null;return;}
+  const active=state.sellerNames.filter(x=>x.active!==false);
+  const saved=localStorage.getItem(sellerSelectionKey());
+  if(saved&&active.some(x=>x.id===saved))state.selectedSellerId=saved;
+  else if(!active.some(x=>x.id===state.selectedSellerId))state.selectedSellerId=active[0]?.id||null;
+  if(state.selectedSellerId)localStorage.setItem(sellerSelectionKey(),state.selectedSellerId);
+  loadCart();
 }
 
 function renderAuth(){
@@ -105,6 +123,15 @@ function renderAuth(){
   el.ordersBtn.classList.toggle("hidden",!isAdmin());
   el.myOrdersBtn.classList.toggle("hidden",!isSeller());
   el.cartBtn.classList.toggle("hidden",!isSeller());
+  el.sellerPickerWrap.classList.toggle("hidden",!isSeller());
+  if(isSeller()){
+    const active=state.sellerNames.filter(x=>x.active!==false);
+    el.sellerPicker.innerHTML=active.length
+      ? active.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")
+      : `<option value="">Нет имён продавцов</option>`;
+    el.sellerPicker.value=state.selectedSellerId||"";
+    el.sellerPicker.disabled=!active.length;
+  }
   el.customerModeBtn.classList.toggle("active",state.customerMode);
   el.customerModeBtn.textContent=state.customerMode?"↩ Вернуться к работе":"◉ Режим клиента";
   renderCartBadge();
@@ -303,7 +330,7 @@ el.addCategoryInFormBtn.onclick=async()=>{try{const c=await addCategory(el.newCa
 
 async function openManage(){
   if(!isOwner())return;el.manageDialog.showModal();
-  await Promise.all([loadStaff(),renderCategoryManager()]);
+  await Promise.all([loadStaff(),renderCategoryManager(),renderSellerNamesManager()]);
 }
 async function loadStaff(){
   const r=await supabase.from("staff_roles").select("*").order("email");if(r.error){toast(r.error.message,true);return}
@@ -316,6 +343,35 @@ el.staffForm.onsubmit=async e=>{
   const r=await supabase.from("staff_roles").upsert({email,role},{onConflict:"email"});if(r.error)return toast(r.error.message,true);
   el.staffEmail.value="";toast("Доступ сохранён");loadStaff();
 };
+async function renderSellerNamesManager(){
+  if(!el.sellerNamesList)return;
+  const rows=state.sellerNames||[];
+  el.sellerNamesList.innerHTML=rows.length?rows.map(x=>`<div class="seller-name-row">
+    <input data-seller-name="${x.id}" value="${esc(x.name)}">
+    <label class="inline-check"><input type="checkbox" data-seller-active="${x.id}" ${x.active!==false?"checked":""}> Активен</label>
+    <div class="actions"><button class="small-btn" data-seller-save="${x.id}">Сохранить</button><button class="small-btn danger-lite" data-seller-del="${x.id}">Удалить</button></div>
+  </div>`).join(""):`<p class="fine">Имена ещё не добавлены.</p>`;
+  el.sellerNamesList.querySelectorAll("[data-seller-save]").forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.sellerSave,name=el.sellerNamesList.querySelector(`[data-seller-name="${id}"]`).value.trim(),active=el.sellerNamesList.querySelector(`[data-seller-active="${id}"]`).checked;
+    if(!name)return toast("Укажите имя продавца",true);
+    const r=await supabase.from("seller_names").update({name,active}).eq("id",id);if(r.error)return toast(r.error.message,true);
+    toast("Имя продавца сохранено");await loadData();renderSellerNamesManager();
+  });
+  el.sellerNamesList.querySelectorAll("[data-seller-del]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Удалить имя продавца из списка? Старые заказы останутся в истории."))return;
+    const r=await supabase.from("seller_names").delete().eq("id",b.dataset.sellerDel);if(r.error)return toast(r.error.message,true);
+    toast("Имя удалено");await loadData();renderSellerNamesManager();
+  });
+}
+
+el.sellerNameForm.onsubmit=async e=>{
+  e.preventDefault();const name=el.newSellerName.value.trim();if(!name)return;
+  const maxSort=Math.max(0,...state.sellerNames.map(x=>x.sort_order||0));
+  const r=await supabase.from("seller_names").insert({name,sort_order:maxSort+10,active:true});
+  if(r.error)return toast(r.error.message,true);
+  el.newSellerName.value="";toast("Продавец добавлен");await loadData();renderSellerNamesManager();
+};
+
 function renderCategoryManager(){
   el.categoryManager.innerHTML=state.categories.map(c=>`<div class="category-row"><span>${esc(c.name)} ${c.active?"":"(скрыта)"}</span><span class="actions"><button class="small-btn" data-cat-toggle="${c.id}">${c.active?"Скрыть":"Показать"}</button><button class="small-btn" data-cat-del="${c.id}">Удалить</button></span></div>`).join("");
   el.categoryManager.querySelectorAll("[data-cat-toggle]").forEach(b=>b.onclick=async()=>{const c=state.categories.find(x=>x.id===b.dataset.catToggle);const r=await supabase.from("categories").update({active:!c.active}).eq("id",c.id);if(r.error)toast(r.error.message,true);else{await loadData();renderCategoryManager()}});
@@ -324,17 +380,25 @@ function renderCategoryManager(){
 el.categoryForm.onsubmit=async e=>{e.preventDefault();try{await addCategory(el.newCategoryName.value);el.newCategoryName.value="";toast("Категория добавлена");renderCategoryManager()}catch(err){toast(err.message||String(err),true)}};
 
 
-function cartKey(){return `quatt-cart:${state.email||"guest"}`;}
-function loadCart(){
-  try{state.cart=JSON.parse(localStorage.getItem(cartKey())||"[]");}catch{state.cart=[]}
+function requireSeller(){
+  if(!isSeller())return false;
+  if(!state.selectedSellerId){toast("Сначала выберите своё имя справа сверху",true);return false;}
+  return true;
 }
-function saveCart(){localStorage.setItem(cartKey(),JSON.stringify(state.cart));renderCartBadge();}
+function cartKey(){return `quatt-cart:${state.email||"guest"}:${state.selectedSellerId||"none"}`;}
+function loadCart(){
+  if(!isSeller()||!state.selectedSellerId){state.cart=[];renderCartBadge();return;}
+  try{state.cart=JSON.parse(localStorage.getItem(cartKey())||"[]");}catch{state.cart=[]}
+  renderCartBadge();
+}
+function saveCart(){if(isSeller()&&state.selectedSellerId)localStorage.setItem(cartKey(),JSON.stringify(state.cart));renderCartBadge();}
 function renderCartBadge(){
   if(!el.cartBadge)return;
   const n=state.cart.reduce((a,x)=>a+Number(x.qty||0),0);
   el.cartBadge.textContent=n;el.cartBadge.classList.toggle("hidden",n===0);
 }
 function addToCart(productId){
+  if(!requireSeller())return;
   const p=state.products.find(x=>x.id===productId);if(!p)return;
   const row=state.cart.find(x=>x.product_id===productId);
   if(row)row.qty+=1; else state.cart.push({product_id:p.id,name:p.name,price:Number(p.price||0),qty:1});
@@ -345,8 +409,10 @@ function changeQty(productId,delta){
   row.qty+=delta;if(row.qty<=0)state.cart=state.cart.filter(x=>x.product_id!==productId);saveCart();renderCart();
 }
 function renderCart(){
+  const seller=selectedSeller();
+  if(!seller){el.cartItems.innerHTML='<div class="empty compact-empty"><h2>Выберите продавца</h2><p>Справа сверху выберите своё имя.</p></div>';el.cartTotal.textContent="";el.checkoutBtn.disabled=true;return;}
   if(!state.cart.length){
-    el.cartItems.innerHTML='<div class="empty" style="min-height:180px"><h2>Корзина пуста</h2><p>Добавьте товар из карточки каталога.</p></div>';
+    el.cartItems.innerHTML=`<div class="empty compact-empty"><h2>Корзина ${esc(seller.name)} пуста</h2><p>Добавьте товар из карточки каталога.</p></div>`;
     el.cartTotal.textContent="";el.checkoutBtn.disabled=true;return;
   }
   el.checkoutBtn.disabled=false;
@@ -360,40 +426,100 @@ function renderCart(){
   el.cartItems.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>changeQty(b.dataset.plus,1));
   el.cartItems.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x.product_id!==b.dataset.remove);saveCart();renderCart()});
 }
+function resetCheckoutForm(){
+  el.checkoutForm.reset();el.clientName.value="";el.clientPhone.value="";el.orderNote.value="";el.initialStatus.value="interest";
+}
+async function addHistory(orderId,fromStatus,toStatus,actorName){
+  const r=await supabase.from("order_status_history").insert({order_id:orderId,from_status:fromStatus||null,to_status:toStatus,changed_by_email:state.email||null,changed_by_name:actorName||null});
+  if(r.error)console.warn("history",r.error);
+}
 async function createOrder(){
-  if(!state.cart.length)return;
+  if(!state.cart.length||!requireSeller())return;
+  const seller=selectedSeller();
   const total=state.cart.reduce((a,x)=>a+Number(x.price)*Number(x.qty),0);
-  const payload={seller_email:state.email,client_name:el.clientName.value.trim(),client_phone:el.clientPhone.value.trim()||null,note:el.orderNote.value.trim()||null,status:el.initialStatus.value,total_amount:total};
+  const payload={seller_email:state.email,seller_name_id:seller.id,seller_name:seller.name,client_name:el.clientName.value.trim(),client_phone:el.clientPhone.value.trim()||null,note:el.orderNote.value.trim()||null,status:el.initialStatus.value,total_amount:total};
   const r=await supabase.from("orders").insert(payload).select().single();if(r.error)throw r.error;
   const items=state.cart.map(x=>({order_id:r.data.id,product_id:x.product_id,product_name:x.name,unit_price:x.price,quantity:x.qty,line_total:x.price*x.qty}));
   const ri=await supabase.from("order_items").insert(items);if(ri.error)throw ri.error;
-  state.cart=[];saveCart();return r.data;
+  await addHistory(r.data.id,null,r.data.status,seller.name);
+  state.cart=[];saveCart();resetCheckoutForm();return r.data;
 }
 const statusLabel=s=>({interest:"Клиент интересуется",paid:"Оплачено",ordered:"Заказан у поставщика",arrived:"Прибыл",issued:"Выдан",cancelled:"Отменён"}[s]||s);
-async function loadOrders(mine=false){
-  let q=supabase.from("orders").select("*,order_items(*)").order("created_at",{ascending:false});
-  if(mine)q=q.eq("seller_email",state.email);
+const activeStatuses=new Set(["interest","paid","ordered","arrived"]);
+function orderInTab(o,tab){return tab==="active"?activeStatuses.has(o.status):tab==="completed"?o.status==="issued":o.status==="cancelled";}
+async function loadOrders(adminMode=false){
+  let q=supabase.from("orders").select("*,order_items(*),order_status_history(*)").order("created_at",{ascending:false});
+  if(!adminMode){
+    if(!requireSeller())return [];
+    q=q.eq("seller_email",state.email).eq("seller_name_id",state.selectedSellerId);
+  }
   const r=await q;if(r.error)throw r.error;state.orders=r.data||[];return state.orders;
 }
-function renderOrders(list,adminMode){
-  el.ordersList.innerHTML=list.length?list.map(o=>`<div class="order-card"><div class="order-head"><div><strong>Заказ ${esc(String(o.id).slice(0,8))}</strong><div class="order-meta">${new Date(o.created_at).toLocaleString("ru-RU")} · ${esc(o.seller_email||"")}</div></div><div class="order-total">${money(o.total_amount)}</div></div><p><b>Клиент:</b> ${esc(o.client_name||"")} ${esc(o.client_phone||"")}</p>${o.note?`<p>${esc(o.note)}</p>`:""}<div class="order-items">${(o.order_items||[]).map(i=>`${esc(i.product_name)} — ${i.quantity} × ${money(i.unit_price)} = ${money(i.line_total)}`).join("<br>")}</div><div class="order-actions">${adminMode?`<select class="choice" data-order-status="${o.id}">${["interest","paid","ordered","arrived","issued","cancelled"].map(st=>`<option value="${st}" ${o.status===st?"selected":""}>${statusLabel(st)}</option>`).join("")}</select>`:`<span class="small-btn">${statusLabel(o.status)}</span>`}</div></div>`).join(""):'<div class="empty" style="min-height:180px"><h2>Заказов пока нет</h2></div>';
-  if(adminMode)el.ordersList.querySelectorAll("[data-order-status]").forEach(sel=>sel.onchange=async()=>{const r=await supabase.from("orders").update({status:sel.value}).eq("id",sel.dataset.orderStatus);if(r.error)toast(r.error.message,true);else{toast("Статус заказа обновлён");await refreshOrdersBadge()}});
+function historyHtml(o){
+  const rows=[...(o.order_status_history||[])].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  if(!rows.length)return '<p class="fine">История пока пустая.</p>';
+  return `<div class="status-history">${rows.map(h=>`<div><time>${new Date(h.created_at).toLocaleString("ru-RU")}</time><span>${h.from_status?`${statusLabel(h.from_status)} → `:""}<b>${statusLabel(h.to_status)}</b></span><em>${esc(h.changed_by_name||h.changed_by_email||"")}</em></div>`).join("")}</div>`;
 }
-async function openOrders(adminMode){
+async function changeOrderStatus(orderId,newStatus,actorName){
+  const order=state.orders.find(x=>x.id===orderId);if(!order)return;
+  const old=order.status;if(old===newStatus)return;
+  const r=await supabase.from("orders").update({status:newStatus}).eq("id",orderId);if(r.error)throw r.error;
+  await addHistory(orderId,old,newStatus,actorName);
+}
+async function deleteOrder(orderId,orderNumber){
+  if(!isAdmin())return;
+  if(!confirm(`Удалить заказ №${orderNumber}? Это действие нельзя отменить.`))return;
+  const r=await supabase.from("orders").delete().eq("id",orderId);if(r.error)return toast(r.error.message,true);
+  toast(`Заказ №${orderNumber} удалён`);await openOrders(true,false);await refreshOrdersBadge(false);
+}
+function renderOrders(list,adminMode){
+  const filtered=list.filter(o=>orderInTab(o,state.orderTab));
+  el.ordersList.innerHTML=filtered.length?filtered.map(o=>{
+    const readonlySeller=!adminMode&&o.status==="issued";
+    const paidClass=o.status==="paid"?" paid-order":"";
+    const sellerName=o.seller_name||"Продавец";
+    let actions="";
+    if(adminMode){
+      actions=`<select class="choice" data-order-status="${o.id}">${["interest","paid","ordered","arrived","issued","cancelled"].map(st=>`<option value="${st}" ${o.status===st?"selected":""}>${statusLabel(st)}</option>`).join("")}</select><button class="danger-lite small-btn" data-order-delete="${o.id}" data-order-number="${o.order_number}">Удалить заказ</button>`;
+    }else if(!readonlySeller){
+      if(o.status==="interest")actions+=`<button class="primary mini" data-seller-status="paid" data-order-id="${o.id}">Отметить оплачено</button>`;
+      if(o.status==="cancelled")actions+=`<button class="primary mini" data-seller-status="interest" data-order-id="${o.id}">Возобновить заказ</button>`;
+      else if(activeStatuses.has(o.status))actions+=`<button class="small-btn danger-lite" data-seller-status="cancelled" data-order-id="${o.id}">Отменить</button>`;
+    }
+    return `<div class="order-card${paidClass}"><div class="order-head"><div><strong>Заказ №${esc(o.order_number||"")}</strong><div class="order-meta">${new Date(o.created_at).toLocaleString("ru-RU")} · ${esc(sellerName)}</div></div><div class="order-total">${money(o.total_amount)}</div></div>${o.status==="paid"?'<div class="paid-banner">✓ ОПЛАЧЕНО — требуется обработка</div>':""}<p><b>Клиент:</b> ${esc(o.client_name||"")} ${esc(o.client_phone||"")}</p>${o.note?`<p>${esc(o.note)}</p>`:""}<div class="order-items">${(o.order_items||[]).map(i=>`${esc(i.product_name)} — ${i.quantity} × ${money(i.unit_price)} = ${money(i.line_total)}`).join("<br>")}</div><div class="order-actions">${actions||`<span class="status-pill">${statusLabel(o.status)}</span>`}<button class="small-btn" data-history-toggle="${o.id}">История статусов</button></div><div class="history-wrap hidden" data-history="${o.id}">${historyHtml(o)}</div></div>`;
+  }).join(""):`<div class="empty compact-empty"><h2>${state.orderTab==="active"?"Активных заказов нет":state.orderTab==="completed"?"Завершённых заказов нет":"Отменённых заказов нет"}</h2></div>`;
+  el.ordersList.querySelectorAll("[data-history-toggle]").forEach(b=>b.onclick=()=>el.ordersList.querySelector(`[data-history="${b.dataset.historyToggle}"]`).classList.toggle("hidden"));
+  if(adminMode){
+    el.ordersList.querySelectorAll("[data-order-status]").forEach(sel=>sel.onchange=async()=>{try{const order=state.orders.find(x=>x.id===sel.dataset.orderStatus);await changeOrderStatus(order.id,sel.value,"Администратор");toast("Статус заказа обновлён");await openOrders(true,false);await refreshOrdersBadge(false)}catch(e){toast(e.message||String(e),true)}});
+    el.ordersList.querySelectorAll("[data-order-delete]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.orderDelete,b.dataset.orderNumber));
+  }else{
+    el.ordersList.querySelectorAll("[data-seller-status]").forEach(b=>b.onclick=async()=>{try{const seller=selectedSeller();await changeOrderStatus(b.dataset.orderId,b.dataset.sellerStatus,seller?.name||"Продавец");toast(b.dataset.sellerStatus==="paid"?"Заказ отмечен как оплаченный":b.dataset.sellerStatus==="cancelled"?"Заказ отменён":"Заказ возобновлён");await openOrders(false,false)}catch(e){toast(e.message||String(e),true)}});
+  }
+}
+async function openOrders(adminMode,show=true){
   try{
-    const rows=await loadOrders(!adminMode);
+    const rows=await loadOrders(adminMode);
+    el.ordersDialog.dataset.adminMode=adminMode?"1":"0";
     el.ordersDialogTitle.textContent=adminMode?"Заказы":"Мои заказы";
-    el.ordersDialogSub.textContent=adminMode?"Новые и текущие заказы продавцов.":"Заказы, которые вы оформили.";
-    renderOrders(rows,adminMode);el.ordersDialog.showModal();
+    el.ordersDialogSub.textContent=adminMode?"Все заказы продавцов.":`Заказы продавца: ${selectedSeller()?.name||"не выбран"}.`;
+    renderOrderTabs();renderOrders(rows,adminMode);if(show)el.ordersDialog.showModal();
   }catch(e){toast(e.message||String(e),true)}
 }
-async function refreshOrdersBadge(){
-  if(!isAdmin()){el.ordersBadge.classList.add("hidden");return;}
-  const r=await supabase.from("orders").select("id,status");if(r.error)return;
-  const n=(r.data||[]).filter(o=>["interest","paid"].includes(o.status)).length;
-  el.ordersBadge.textContent=n;el.ordersBadge.classList.toggle("hidden",n===0);
+function renderOrderTabs(){
+  el.orderTabs.querySelectorAll("[data-order-tab]").forEach(b=>b.classList.toggle("active",b.dataset.orderTab===state.orderTab));
 }
-
+el.orderTabs.querySelectorAll("[data-order-tab]").forEach(b=>b.onclick=()=>{state.orderTab=b.dataset.orderTab;renderOrderTabs();renderOrders(state.orders,el.ordersDialog.dataset.adminMode==="1")});
+async function refreshOrdersBadge(notify=true){
+  if(!isAdmin()){el.ordersBadge.classList.add("hidden");return;}
+  const r=await supabase.from("orders").select("id,status,order_number,seller_name");if(r.error)return;
+  const paid=(r.data||[]).filter(o=>o.status==="paid");
+  el.ordersBadge.textContent=paid.length;el.ordersBadge.classList.toggle("hidden",paid.length===0);
+  const key=`quatt-paid-seen:${state.email}`;let seen=[];try{seen=JSON.parse(localStorage.getItem(key)||"[]")}catch{}
+  const known=new Set(seen),fresh=paid.filter(o=>!known.has(o.id));
+  if(state.paidSeenReady&&notify)fresh.slice(0,3).forEach(o=>toast(`Оплачен заказ №${o.order_number}${o.seller_name?" · "+o.seller_name:""}`));
+  localStorage.setItem(key,JSON.stringify([...new Set([...seen,...paid.map(o=>o.id)])].slice(-300)));
+  state.paidSeenReady=true;
+}
 
 el.loginBtn.onclick=()=>el.loginDialog.showModal();
 el.loginForm.onsubmit=async e=>{
@@ -402,16 +528,17 @@ el.loginForm.onsubmit=async e=>{
   if(r.error){el.loginError.textContent=r.error.message;return}
   state.session=r.data.session;await loadRole();el.loginDialog.close();await loadData();
 };
-el.logoutBtn.onclick=async()=>{await supabase.auth.signOut();state.session=null;state.role="guest";state.customerMode=false;await loadData()};
+el.logoutBtn.onclick=async()=>{await supabase.auth.signOut();state.session=null;state.role="guest";state.customerMode=false;state.selectedSellerId=null;state.cart=[];await loadData()};
 el.customerModeBtn.onclick=()=>{state.customerMode=!state.customerMode;render()};
 el.addProductBtn.onclick=()=>openProduct();
 el.mobileAddProductBtn.onclick=()=>openProduct();
 el.manageBtn.onclick=openManage;el.manageBtnDesktop.onclick=openManage;
-el.cartBtn.onclick=()=>{renderCart();el.cartDialog.showModal()};
-el.checkoutBtn.onclick=()=>{if(!state.cart.length)return;el.cartDialog.close();el.checkoutDialog.showModal()};
-el.checkoutForm.onsubmit=async e=>{e.preventDefault();try{await createOrder();el.checkoutDialog.close();toast("Заказ создан");await refreshOrdersBadge()}catch(err){toast(err.message||String(err),true)}};
-el.ordersBtn.onclick=()=>openOrders(true);
-el.myOrdersBtn.onclick=()=>openOrders(false);
+el.sellerPicker.onchange=()=>{state.selectedSellerId=el.sellerPicker.value||null;if(state.selectedSellerId)localStorage.setItem(sellerSelectionKey(),state.selectedSellerId);loadCart();renderAuth();};
+el.cartBtn.onclick=()=>{if(!requireSeller())return;renderCart();el.cartDialog.showModal()};
+el.checkoutBtn.onclick=()=>{if(!state.cart.length||!requireSeller())return;resetCheckoutForm();el.cartDialog.close();el.checkoutDialog.showModal()};
+el.checkoutForm.onsubmit=async e=>{e.preventDefault();try{const o=await createOrder();el.checkoutDialog.close();toast(`Заказ №${o.order_number} создан`);await refreshOrdersBadge()}catch(err){toast(err.message||String(err),true)}};
+el.ordersBtn.onclick=()=>{state.orderTab="active";openOrders(true)};
+el.myOrdersBtn.onclick=()=>{if(!requireSeller())return;state.orderTab="active";openOrders(false)};
 
 el.searchInput.oninput=()=>{state.q=el.searchInput.value;renderFilters();renderProducts()};
 el.clearSearchBtn.onclick=()=>{state.q="";renderFilters();renderProducts()};
@@ -421,8 +548,10 @@ el.maxPrice.oninput=()=>{state.max=el.maxPrice.value;renderProducts()};
 el.sortFilter.onchange=()=>{state.sort=el.sortFilter.value;renderProducts()};
 
 async function init(){
-  const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();loadCart();renderAuth();await loadData();await refreshOrdersBadge();
-  supabase.auth.onAuthStateChange(async(_event,session)=>{state.session=session;await loadRole();loadCart();renderAuth();await refreshOrdersBadge()});
+  const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();renderAuth();await loadData();await refreshOrdersBadge(false);
+  supabase.auth.onAuthStateChange(async(_event,session)=>{state.session=session;await loadRole();await loadData();await refreshOrdersBadge(false)});
+  setInterval(()=>{if(isAdmin())refreshOrdersBadge(true)},20000);
   if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
 }
+
 init();

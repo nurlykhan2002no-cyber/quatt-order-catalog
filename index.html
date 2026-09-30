@@ -14,13 +14,16 @@
   <div id="toastHost" class="toast-host"></div>
 
   <header>
-    <div class="logo">QUATT<span>QURYLYS</span></div>
+    <div class="logo-wrap"><img class="logo-gif" src="./quatt.gif" alt="QUATT QURYLYS"></div>
     <div class="header-divider"></div>
     <span class="header-title">Каталог под заказ</span>
     <div class="header-right">
+      <label id="sellerPickerWrap" class="seller-picker hidden">Продавец
+        <select id="sellerPicker"></select>
+      </label>
       <button id="ordersBtn" class="client hidden">Заказы <span id="ordersBadge" class="badge hidden">0</span></button>
       <button id="myOrdersBtn" class="client hidden">Мои заказы</button>
-      <button id="cartBtn" class="client hidden">Корзина <span id="cartBadge" class="badge">0</span></button>
+      <button id="cartBtn" class="client hidden">Корзина <span id="cartBadge" class="badge hidden">0</span></button>
       <button id="manageBtn" class="mobile-manage hidden" aria-label="Доступ и категории">⚙</button>
       <button id="customerModeBtn" class="client hidden">◉ Режим клиента</button>
       <button id="loginBtn" class="client">Войти</button>
@@ -117,7 +120,7 @@
       <input id="productId" type="hidden">
 
       <div class="upload-box">
-        <span class="camera">▣</span><b>Добавить фотографии</b>
+        <span class="camera" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.5 4 16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1.5-2h5Z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><b>Добавить фотографии</b>
         <span>До 5 фото · JPG, PNG, WebP · до 8 МБ</span>
         <input id="photoInput" type="file" multiple accept="image/jpeg,image/png,image/webp" capture="environment">
       </div>
@@ -204,6 +207,16 @@
         <div id="staffList" class="member-list"></div>
       </section>
 
+      <section id="sellerNamesSection">
+        <h3>Имена продавцов</h3>
+        <p class="section-help">Все продавцы могут входить под одной общей учёткой. Здесь задаются имена, по которым разделяются корзины и заказы.</p>
+        <form id="sellerNameForm" class="category-form">
+          <input id="newSellerName" placeholder="Имя продавца" required>
+          <button class="primary" type="submit">Добавить</button>
+        </form>
+        <div id="sellerNamesList" class="category-manager"></div>
+      </section>
+
       <section>
         <h3>Категории</h3>
         <form id="categoryForm" class="category-form">
@@ -239,6 +252,11 @@
   <dialog id="ordersDialog" class="modal">
     <div class="modal-card orders-modal">
       <div class="modal-head"><div><h2 id="ordersDialogTitle">Заказы</h2><p id="ordersDialogSub">Новые и текущие заказы.</p></div><button type="button" class="close-btn" data-close="ordersDialog">×</button></div>
+      <div class="order-tabs" id="orderTabs">
+        <button type="button" class="order-tab active" data-order-tab="active">Заказы</button>
+        <button type="button" class="order-tab" data-order-tab="completed">Завершённые</button>
+        <button type="button" class="order-tab" data-order-tab="cancelled">Отменённые</button>
+      </div>
       <div id="ordersList"></div>
     </div>
   </dialog>
