@@ -18,6 +18,9 @@
     <div class="header-divider"></div>
     <span class="header-title">Каталог под заказ</span>
     <div class="header-right">
+      <button id="ordersBtn" class="client hidden">Заказы <span id="ordersBadge" class="badge hidden">0</span></button>
+      <button id="myOrdersBtn" class="client hidden">Мои заказы</button>
+      <button id="cartBtn" class="client hidden">Корзина <span id="cartBadge" class="badge">0</span></button>
       <button id="manageBtn" class="mobile-manage hidden" aria-label="Доступ и категории">⚙</button>
       <button id="customerModeBtn" class="client hidden">◉ Режим клиента</button>
       <button id="loginBtn" class="client">Войти</button>
@@ -40,7 +43,7 @@
         <div>
           <div class="eyebrow">QUATT / ПОД ЗАКАЗ</div>
           <h1 id="pageTitle">Выберите то, что подходит</h1>
-          <p class="intro">Товары для ванной · Розничные цены · Поставка под заказ</p>
+          <p class="intro">Каталог товаров под заказ · Розничные цены · Актуальное наличие</p>
         </div>
         <button id="addProductBtn" class="primary hidden">＋ Добавить товар</button>
       </div>
@@ -107,8 +110,8 @@
 
   <dialog id="productDialog">
     <form id="productForm" class="modal-card form-modal">
-      <div class="modal-head sticky-top">
-        <div><h2 id="productDialogTitle">Новый товар</h2><p>Фото и розничную цену увидит клиент.</p></div>
+      <div class="modal-head">
+        <div><h2 id="productDialogTitle">Новый товар</h2><p>Фото и розничную цену увидит клиент. Закуп и поставщика — только администраторы.</p></div>
         <button type="button" class="close" data-close="productDialog">×</button>
       </div>
       <input id="productId" type="hidden">
@@ -165,9 +168,13 @@
         </div>
       </section>
 
-      <label class="switch-row"><input id="fActive" type="checkbox" checked> Показывать в каталоге</label>
+      <label class="switch-row">
+          <input id="fActive" class="switch-input" type="checkbox" checked>
+          <span class="switch-ui" aria-hidden="true"></span>
+          <span>Показывать в каталоге</span>
+        </label>
 
-      <div class="form-actions sticky-bottom">
+      <div class="form-actions">
         <button id="deleteProductBtn" class="danger hidden" type="button">Удалить</button>
         <span class="spacer"></span>
         <button class="primary" type="submit">✓ Сохранить товар</button>
@@ -205,6 +212,34 @@
         </form>
         <div id="categoryManager" class="category-manager"></div>
       </section>
+    </div>
+  </dialog>
+
+
+  <dialog id="cartDialog" class="modal">
+    <div class="modal-card medium">
+      <div class="modal-head"><div><h2>Корзина</h2><p>Товары, которые клиент хочет заказать.</p></div><button type="button" class="close-btn" data-close="cartDialog">×</button></div>
+      <div id="cartItems"></div>
+      <div id="cartTotal" class="cart-total"></div>
+      <button id="checkoutBtn" class="primary-btn wide" type="button">Оформить под заказ</button>
+    </div>
+  </dialog>
+
+  <dialog id="checkoutDialog" class="modal">
+    <form id="checkoutForm" method="dialog" class="modal-card small">
+      <div class="modal-head"><div><h2>Оформить заказ</h2><p>После сохранения заказ увидит администратор.</p></div><button type="button" class="close-btn" data-close="checkoutDialog">×</button></div>
+      <label>Имя клиента<input id="clientName" required></label>
+      <label>Телефон<input id="clientPhone"></label>
+      <label>Комментарий<textarea id="orderNote" rows="3"></textarea></label>
+      <label>Статус<select id="initialStatus"><option value="interest">Клиент интересуется</option><option value="paid">Оплачено</option></select></label>
+      <button class="primary-btn wide" type="submit">Создать заказ</button>
+    </form>
+  </dialog>
+
+  <dialog id="ordersDialog" class="modal">
+    <div class="modal-card orders-modal">
+      <div class="modal-head"><div><h2 id="ordersDialogTitle">Заказы</h2><p id="ordersDialogSub">Новые и текущие заказы.</p></div><button type="button" class="close-btn" data-close="ordersDialog">×</button></div>
+      <div id="ordersList"></div>
     </div>
   </dialog>
 
