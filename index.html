@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#171717">
+  <meta name="description" content="QUATT QURYLYS — каталог товаров под заказ">
+  <title>QUATT — Каталог под заказ</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="toastHost" class="toast-host"></div>
+
+  <header>
+    <div class="logo">QUATT<span>QURYLYS</span></div>
+    <div class="header-divider"></div>
+    <span class="header-title">Каталог под заказ</span>
+    <div class="header-right">
+      <button id="manageBtn" class="mobile-manage hidden" aria-label="Доступ и категории">⚙</button>
+      <button id="customerModeBtn" class="client hidden">◉ Режим клиента</button>
+      <button id="loginBtn" class="client">Войти</button>
+      <button id="logoutBtn" class="link-btn hidden">Выйти</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside>
+      <div class="nav-caption">КАТЕГОРИИ</div>
+      <div id="desktopCategories"></div>
+      <div id="sideBottom" class="side-bottom hidden">
+        <button id="manageBtnDesktop" class="nav">⚙ Доступ и категории</button>
+        <p>✓ Закрытая информация защищена</p>
+      </div>
+    </aside>
+
+    <main>
+      <div class="title-row">
+        <div>
+          <div class="eyebrow">QUATT / ПОД ЗАКАЗ</div>
+          <h1 id="pageTitle">Выберите то, что подходит</h1>
+          <p class="intro">Товары для ванной · Розничные цены · Поставка под заказ</p>
+        </div>
+        <button id="addProductBtn" class="primary hidden">＋ Добавить товар</button>
+      </div>
+
+      <div class="search">
+        <span class="search-icon">⌕</span>
+        <input id="searchInput" aria-label="Поиск товара" placeholder="Название, бренд, артикул или характеристика">
+        <button id="clearSearchBtn" class="link-btn hidden">Очистить</button>
+      </div>
+
+      <div class="mobile-cats">
+        <select id="mobileCategory" class="choice"></select>
+      </div>
+
+      <div class="filters">
+        <span class="filter-icon">☰</span>
+        <select id="brandFilter" class="choice"></select>
+        <label class="price-filter">До
+          <input id="maxPrice" type="number" min="0" placeholder="любая цена"> ₸
+        </label>
+        <select id="sortFilter" class="choice">
+          <option>Сначала новые</option>
+          <option>Цена: по возрастанию</option>
+          <option>Цена: по убыванию</option>
+        </select>
+      </div>
+
+      <div class="result-line">
+        <span id="resultCount">0 товаров</span>
+        <span>◷ Наличие и срок уточняем перед покупкой</span>
+      </div>
+
+      <section id="stateBox" class="empty">Загружаем каталог…</section>
+      <section id="catalogGrid" class="catalog-grid hidden"></section>
+
+      <footer>QUATT QURYLYS<span>Нұрсая 17, Атырау · 09:00–21:00</span></footer>
+    </main>
+  </div>
+
+  <button id="mobileAddProductBtn" class="fab hidden">＋</button>
+
+  <dialog id="loginDialog">
+    <form id="loginForm" class="modal-card small">
+      <div class="modal-head">
+        <div><h2>Вход</h2><p>Администратор / сотрудник</p></div>
+        <button type="button" class="close" data-close="loginDialog">×</button>
+      </div>
+      <label>Email<input id="loginEmail" type="email" autocomplete="username" required></label>
+      <label>Пароль<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+      <div id="loginError" class="error-text"></div>
+      <button class="primary full-btn" type="submit">Войти</button>
+    </form>
+  </dialog>
+
+  <dialog id="detailDialog">
+    <div class="modal-card detail-modal">
+      <div class="modal-head">
+        <div><h2 id="detailTitle"></h2><p>Товар под заказ</p></div>
+        <button type="button" class="close" data-close="detailDialog">×</button>
+      </div>
+      <div id="detailContent"></div>
+    </div>
+  </dialog>
+
+  <dialog id="productDialog">
+    <form id="productForm" class="modal-card form-modal">
+      <div class="modal-head sticky-top">
+        <div><h2 id="productDialogTitle">Новый товар</h2><p>Фото и розничную цену увидит клиент.</p></div>
+        <button type="button" class="close" data-close="productDialog">×</button>
+      </div>
+      <input id="productId" type="hidden">
+
+      <div class="upload-box">
+        <span class="camera">▣</span><b>Добавить фотографии</b>
+        <span>До 5 фото · JPG, PNG, WebP · до 8 МБ</span>
+        <input id="photoInput" type="file" multiple accept="image/jpeg,image/png,image/webp" capture="environment">
+      </div>
+      <div id="photoThumbs" class="thumbs"></div>
+
+      <div class="form-grid">
+        <label>Название товара *<input id="fName" required></label>
+        <label>Категория
+          <select id="fCategory" class="choice"></select>
+          <div id="ownerCategoryAdd" class="category-add hidden">
+            <input id="newCategoryInForm" placeholder="Новая категория">
+            <button id="addCategoryInFormBtn" type="button">＋ Добавить</button>
+          </div>
+        </label>
+        <label>Бренд<input id="fBrand"></label>
+        <label>Артикул<input id="fArticle"></label>
+        <label>Розничная цена, ₸ *<input id="fPrice" type="number" min="0" step="0.01" required></label>
+        <label>Срок поставки<input id="fDelivery" value="1 день"></label>
+        <label class="wide">Характеристики: название и значение, с новой строки<textarea id="fSpecs"></textarea></label>
+        <label class="wide">Ключевые слова для поиска<textarea id="fKeywords"></textarea></label>
+      </div>
+
+      <section class="internal">
+        <h3>✓ Только для администраторов</h3>
+        <div class="form-grid">
+          <label>Закупочная цена, ₸ *<input id="fCost" type="number" min="0" step="0.01" required></label>
+          <label>Поставщик / магазин<input id="fSupplier"></label>
+          <label class="wide">Адрес поставщика<input id="fSupplierAddress"></label>
+          <label>Контакт поставщика<input id="fSupplierContact"></label>
+          <label>Дата проверки цены<input id="fCheckedDate" type="date"></label>
+          <label class="wide">Внутренние заметки<textarea id="fNotes"></textarea></label>
+        </div>
+
+        <div class="markup">
+          <span>Наценка:</span>
+          <button type="button" data-markup="20">+20%</button>
+          <button type="button" data-markup="25">+25%</button>
+          <button type="button" data-markup="30">+30%</button>
+          <button type="button" data-markup="50">+50%</button>
+          <button type="button" data-markup="75">+75%</button>
+          <button type="button" data-markup="100">+100%</button>
+          <div class="manual-markup">
+            <label>Своя наценка, %</label>
+            <input id="manualMarkup" type="number" min="0" step="0.1" placeholder="например 135">
+            <button id="applyManualMarkup" type="button">Применить</button>
+          </div>
+          <span id="marginInfo">Маржа: 0 ₸</span>
+        </div>
+      </section>
+
+      <label class="switch-row"><input id="fActive" type="checkbox" checked> Показывать в каталоге</label>
+
+      <div class="form-actions sticky-bottom">
+        <button id="deleteProductBtn" class="danger hidden" type="button">Удалить</button>
+        <span class="spacer"></span>
+        <button class="primary" type="submit">✓ Сохранить товар</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="manageDialog">
+    <div class="modal-card manage-modal">
+      <div class="modal-head">
+        <div><h2>Доступ и категории</h2><p>Владелец управляет ролями и категориями.</p></div>
+        <button type="button" class="close" data-close="manageDialog">×</button>
+      </div>
+
+      <section id="staffSection">
+        <h3>Назначить роль</h3>
+        <form id="staffForm" class="staff-form">
+          <label>Email сотрудника<input id="staffEmail" type="email" required></label>
+          <label>Роль
+            <select id="staffRole" class="choice">
+              <option value="seller">Продавец</option>
+              <option value="admin">Администратор</option>
+            </select>
+          </label>
+          <button class="primary" type="submit">Сохранить доступ</button>
+        </form>
+        <div id="staffList" class="member-list"></div>
+      </section>
+
+      <section>
+        <h3>Категории</h3>
+        <form id="categoryForm" class="category-form">
+          <input id="newCategoryName" placeholder="Новая категория" required>
+          <button class="primary" type="submit">Добавить</button>
+        </form>
+        <div id="categoryManager" class="category-manager"></div>
+      </section>
+    </div>
+  </dialog>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
