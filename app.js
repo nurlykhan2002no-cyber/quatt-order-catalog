@@ -277,7 +277,73 @@ let searchTimer;function maybeLogSearch(){
 }
 function renderSearchSuggestions(){const q=norm(state.q);if(q.length<1){el.searchSuggestions.classList.add("hidden");return}const rows=state.products.filter(p=>(canViewInternal()||p.active!==false)&&norm(`${p.name} ${p.brand||""}`).includes(q)).slice(0,7);el.searchSuggestions.classList.toggle("hidden",!rows.length);el.searchSuggestions.innerHTML=rows.map(p=>`<button data-suggest-product="${p.id}"><b>${esc(p.name)}</b>${p.brand?`<span>${esc(p.brand)}</span>`:""}</button>`).join("");el.searchSuggestions.querySelectorAll("[data-suggest-product]").forEach(b=>b.onclick=()=>{el.searchSuggestions.classList.add("hidden");openDetail(b.dataset.suggestProduct)})}
 
-async function openDashboard(){if(!isAdmin())return;el.dashboardDialog.showModal();el.dashboardContent.innerHTML="Загрузка…";try{const since=new Date(Date.now()-30*864e5).toISOString();const [views,searches,orders]=await Promise.all([supabase.from("product_view_events").select("product_id,viewed_at").gte("viewed_at",since),supabase.from("catalog_search_events").select("term,searched_at").gte("searched_at",since),supabase.from("orders").select("id,status,total_amount,created_at").gte("created_at",since)]);if(views.error)throw views.error;if(searches.error)throw searches.error;if(orders.error)throw orders.error;const vc={};(views.data||[]).forEach(v=>vc[v.product_id]=(vc[v.product_id]||0)+1);state.viewCounts=vc;const topViews=Object.entries(vc).sort((a,b)=>b[1]-a[1]).slice(0,10);const sc={};(searches.data||[]).forEach(s=>{const k=norm(s.term);if(k)sc[k]=(sc[k]||0)+1});const topSearch=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,10);const os=orders.data||[];el.dashboardContent.innerHTML=`<div class="dash-stats"><div><span>Товаров</span><strong>${state.products.length}</strong></div><div><span>Активных</span><strong>${state.products.filter(p=>p.active!==false).length}</strong></div><div><span>Заказов 30 дней</span><strong>${os.length}</strong></div><div><span>Оплачено</span><strong>${os.filter(o=>o.status==="paid").length}</strong></div><div><span>Завершено</span><strong>${os.filter(o=>o.status==="issued").length}</strong></div><div><span>Отменено</span><strong>${os.filter(o=>o.status==="cancelled").length}</strong></div></div><div class="dash-cols"><section><h3>Топ товаров по просмотрам</h3>${topViews.length?topViews.map(([id,n],i)=>`<div class="rank"><span>${i+1}. ${esc(state.products.find(p=>p.id===id)?.name||"Удалённый товар")}</span><b>${n}</b></div>`).join(""):'<p class="fine">Пока мало данных.</p>'}</section><section><h3>Что ищут клиенты</h3>${topSearch.length?topSearch.map(([q,n],i)=>`<div class="rank"><span>${i+1}. ${esc(q)}</span><b>${n}</b></div>`).join(""):'<p class="fine">Пока мало данных.</p>'}</section></div>`;renderProducts()}catch(e){el.dashboardContent.innerHTML=`<p class="error-text">${esc(e.message||e)}</p>`}}
+async function clearDashboardAnalytics(kind){
+  if(!isAdmin())return;
+  const isViews=kind==="views";
+  const label=isViews?"всю статистику просмотров товаров":"всю статистику поисковых запросов";
+  if(!confirm(`Очистить ${label}? Это действие нельзя отменить.`))return;
+  try{
+    const fn=isViews?"clear_product_view_events":"clear_catalog_search_events";
+    const {error}=await supabase.rpc(fn);
+    if(error)throw error;
+    if(isViews)state.viewCounts={};
+    toast(isViews?"Просмотры очищены":"Поиски очищены");
+    await openDashboard(true);
+    if(isViews)renderProducts();
+  }catch(e){toast(e.message||String(e),true)}
+}
+async function openDashboard(refreshOnly=false){
+  if(!isAdmin())return;
+  if(!refreshOnly)el.dashboardDialog.showModal();
+  el.dashboardContent.innerHTML="Загрузка…";
+  try{
+    const since=new Date(Date.now()-30*864e5).toISOString();
+    const [views,searches,orders]=await Promise.all([
+      supabase.from("product_view_events").select("product_id,viewed_at").gte("viewed_at",since),
+      supabase.from("catalog_search_events").select("term,searched_at").gte("searched_at",since),
+      supabase.from("orders").select("id,status,total_amount,created_at").gte("created_at",since)
+    ]);
+    if(views.error)throw views.error;
+    if(searches.error)throw searches.error;
+    if(orders.error)throw orders.error;
+    const vc={};
+    (views.data||[]).forEach(v=>vc[v.product_id]=(vc[v.product_id]||0)+1);
+    state.viewCounts=vc;
+    const topViews=Object.entries(vc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const sc={};
+    (searches.data||[]).forEach(s=>{const k=norm(s.term);if(k)sc[k]=(sc[k]||0)+1});
+    const topSearch=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const os=orders.data||[];
+    el.dashboardContent.innerHTML=`
+      <div class="dash-stats">
+        <div><span>Товаров</span><strong>${state.products.length}</strong></div>
+        <div><span>Активных</span><strong>${state.products.filter(p=>p.active!==false).length}</strong></div>
+        <div><span>Заказов 30 дней</span><strong>${os.length}</strong></div>
+        <div><span>Оплачено</span><strong>${os.filter(o=>o.status==="paid").length}</strong></div>
+        <div><span>Завершено</span><strong>${os.filter(o=>o.status==="issued").length}</strong></div>
+        <div><span>Отменено</span><strong>${os.filter(o=>o.status==="cancelled").length}</strong></div>
+      </div>
+      <div class="dash-cols">
+        <section>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+            <h3 style="margin:0">Топ товаров по просмотрам</h3>
+            <button class="small-btn danger-lite" id="clearViewsAnalyticsBtn" type="button">Очистить просмотры</button>
+          </div>
+          ${topViews.length?topViews.map(([id,n],i)=>`<div class="rank"><span>${i+1}. ${esc(state.products.find(p=>p.id===id)?.name||"Удалённый товар")}</span><b>${n}</b></div>`).join(""):'<p class="fine">Пока мало данных.</p>'}
+        </section>
+        <section>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+            <h3 style="margin:0">Что ищут клиенты</h3>
+            <button class="small-btn danger-lite" id="clearSearchAnalyticsBtn" type="button">Очистить поиски</button>
+          </div>
+          ${topSearch.length?topSearch.map(([q,n],i)=>`<div class="rank"><span>${i+1}. ${esc(q)}</span><b>${n}</b></div>`).join(""):'<p class="fine">Пока мало данных.</p>'}
+        </section>
+      </div>`;
+    document.getElementById("clearViewsAnalyticsBtn")?.addEventListener("click",()=>clearDashboardAnalytics("views"));
+    document.getElementById("clearSearchAnalyticsBtn")?.addEventListener("click",()=>clearDashboardAnalytics("searches"));
+    renderProducts();
+  }catch(e){el.dashboardContent.innerHTML=`<p class="error-text">${esc(e.message||e)}</p>`}
+}
 function openBulk(){if(!priv())return;el.bulkProducts.innerHTML=state.products.map(p=>`<label class="bulk-row"><input type="checkbox" value="${p.id}"><span>${esc(p.name)}</span><small>${esc(catName(p.category_id))}</small><b>${money(p.price)}</b></label>`).join("");el.bulkDialog.showModal()}
 el.bulkSelectAll.onclick=()=>{const boxes=[...el.bulkProducts.querySelectorAll('input[type="checkbox"]')];const all=boxes.every(x=>x.checked);boxes.forEach(x=>x.checked=!all)};
 el.applyBulkBtn.onclick=async()=>{const ids=[...el.bulkProducts.querySelectorAll('input:checked')].map(x=>x.value);if(!ids.length)return toast("Выберите товары",true);if(!confirm(`Изменить ${ids.length} товар(ов)?`))return;try{for(const id of ids){const p=state.products.find(x=>x.id===id),patch={};if(el.bulkCategory.value)patch.category_id=el.bulkCategory.value;if(el.bulkVisibility.value)patch.active=el.bulkVisibility.value==="true";if(el.bulkMarkup.value!==""){const n=Number(el.bulkMarkup.value);patch.markup=n;patch.price=roundRetail(Number(p.cost||0)*(1+n/100))}if(!Object.keys(patch).length)continue;const r=await supabase.from("products").update(patch).eq("id",id);if(r.error)throw r.error}toast("Массовое изменение готово");el.bulkDialog.close();await loadData()}catch(e){toast(e.message||String(e),true)}};
