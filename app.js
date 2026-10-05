@@ -396,5 +396,26 @@ el.loginBtn.onclick=()=>el.loginDialog.showModal();el.loginForm.onsubmit=async e
 el.roleModeBtn.onclick=()=>{if(!isAdmin())return;state.customerMode=false;state.roleMode=state.roleMode==="seller"?"native":"seller";syncSelectedSeller();render()};el.customerModeBtn.onclick=()=>{if(!isAdmin())return;state.customerMode=!state.customerMode;if(state.customerMode)state.roleMode="native";syncSelectedSeller();render()};el.addProductBtn.onclick=()=>openProduct();el.mobileAddProductBtn.onclick=()=>openProduct();el.manageBtn.onclick=openManage;el.manageBtnDesktop.onclick=openManage;el.sellerPicker.onchange=()=>{state.selectedSellerId=el.sellerPicker.value||null;if(state.selectedSellerId)localStorage.setItem(sellerSelectionKey(),state.selectedSellerId);loadCart();renderAuth()};el.cartBtn.onclick=()=>{if(!requireSeller())return;renderCart();el.cartDialog.showModal()};el.checkoutBtn.onclick=()=>{if(!state.cart.length||!requireSeller())return;resetCheckoutForm();el.cartDialog.close();el.checkoutDialog.showModal()};el.checkoutForm.onsubmit=async e=>{e.preventDefault();try{const o=await createOrder();if(o){el.checkoutDialog.close();toast(`Заказ №${o.order_number} создан`);resetCheckoutForm()}}catch(e){toast(e.message||String(e),true)}};el.ordersBtn.onclick=()=>{state.orderTab="active";if(canManageOrders())openOrders(true)};el.myOrdersBtn.onclick=()=>{state.orderTab="active";openOrders(false)};
 el.favoritesBtn.onclick=()=>{renderFavorites();el.favoritesDialog.showModal()};el.customerCartBtn.onclick=()=>{renderCustomerCart();el.customerCartDialog.showModal()};el.sendCustomerCartBtn.onclick=sendCustomerCart;el.contactsBtn.onclick=()=>el.contactsDialog.showModal();el.contactWhatsappBtn.onclick=()=>openWhatsapp();el.footerWhatsappBtn.onclick=()=>openWhatsapp();el.helpWhatsappBtn.onclick=()=>openWhatsapp("Здравствуйте! Пришёл с сайта QUATT QURYLYS. Не нашёл нужный товар. Помогите подобрать / заказать.");el.notFoundBtn.onclick=()=>el.helpWhatsappBtn.click();el.recentBtn.onclick=()=>{el.recentSection.classList.remove("hidden");el.recentSection.scrollIntoView({behavior:"smooth"})};el.clearRecentBtn.onclick=()=>{state.recent=[];saveLocal();renderRecent()};el.dashboardBtn.onclick=()=>openDashboard(false);el.bulkBtn.onclick=openBulk;
 
-async function init(){loadLocal();const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();await loadData();renderLocalBadges();if(isAdmin()||isProcurement()){refreshOrdersBadge(false);setInterval(()=>refreshOrdersBadge(true),30000)}if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=25").catch(()=>{})}
+
+function setupMobileCatalogUI(){
+  const filters=document.querySelector(".filters");
+  const searchWrap=document.querySelector(".search-wrap");
+  if(!filters||!searchWrap||document.getElementById("mobileFilterToggle"))return;
+  const btn=document.createElement("button");
+  btn.id="mobileFilterToggle";
+  btn.type="button";
+  btn.className="mobile-filter-toggle";
+  btn.innerHTML='<span>Фильтры</span><span class="mobile-filter-chevron">⌄</span>';
+  searchWrap.insertAdjacentElement("afterend",btn);
+  const sync=()=>{
+    const open=document.body.classList.contains("mobile-filters-open");
+    btn.classList.toggle("active",open);
+    btn.querySelector("span").textContent=open?"Скрыть фильтры":"Фильтры";
+    btn.querySelector(".mobile-filter-chevron").textContent=open?"⌃":"⌄";
+  };
+  btn.addEventListener("click",()=>{document.body.classList.toggle("mobile-filters-open");sync()});
+  sync();
+}
+
+async function init(){setupMobileCatalogUI();loadLocal();const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();await loadData();renderLocalBadges();if(isAdmin()||isProcurement()){refreshOrdersBadge(false);setInterval(()=>refreshOrdersBadge(true),30000)}if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=256").catch(()=>{})}
 init();
