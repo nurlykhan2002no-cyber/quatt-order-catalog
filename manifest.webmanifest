@@ -1,9 +1,9 @@
 {
-  "name":"QUATT Каталог под заказ",
+  "name":"QUATT QURYLYS — Каталог товаров",
   "short_name":"QUATT",
   "start_url":"./",
   "display":"standalone",
   "background_color":"#f5f6f7",
-  "theme_color":"#171717",
+  "theme_color":"#000000",
   "icons":[{"src":"./favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
 }

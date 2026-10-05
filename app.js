@@ -3,48 +3,30 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_BUCKET } from "./config.js";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const $ = id => document.getElementById(id);
+const PHONE = "77076154747";
+const SITE_NAME = "QUATT QURYLYS";
+const BASE_WA = "Здравствуйте! Пришёл с сайта QUATT QURYLYS. Хочу уточнить наличие / заказать товар.";
 const state = {
-  session:null, role:"guest", email:"",
-  customerMode:false, categories:[], products:[], images:[], staff:[],
-  cat:"all", q:"", brand:"all", max:"", sort:"Сначала новые",
-  editing:null, formImages:[], cart:[], orders:[], sellerNames:[], selectedSellerId:null, orderTab:"active", paidSeenReady:false
+  session:null, role:"guest", email:"", customerMode:false,
+  categories:[], products:[], images:[], staff:[], sellerNames:[], banners:[],
+  cat:"all", q:"", brand:"all", availability:"all", max:"", sort:"Сначала новые", specFilters:{},
+  editing:null, formImages:[], cart:[], customerCart:[], favorites:[], recent:[], orders:[],
+  selectedSellerId:null, orderTab:"active", paidSeenReady:false, viewCounts:{},
+  lightbox:{images:[],index:0,scale:1,x:0,y:0,pointers:new Map(),lastDist:0}
 };
 
-const el = {
-  loginBtn:$("loginBtn"), logoutBtn:$("logoutBtn"), customerModeBtn:$("customerModeBtn"),
-  manageBtn:$("manageBtn"), manageBtnDesktop:$("manageBtnDesktop"), sideBottom:$("sideBottom"),
-  addProductBtn:$("addProductBtn"), mobileAddProductBtn:$("mobileAddProductBtn"),
-  desktopCategories:$("desktopCategories"), mobileCategory:$("mobileCategory"), pageTitle:$("pageTitle"),
-  searchInput:$("searchInput"), clearSearchBtn:$("clearSearchBtn"), brandFilter:$("brandFilter"),
-  maxPrice:$("maxPrice"), sortFilter:$("sortFilter"), resultCount:$("resultCount"),
-  stateBox:$("stateBox"), catalogGrid:$("catalogGrid"),
-  loginDialog:$("loginDialog"), loginForm:$("loginForm"), loginEmail:$("loginEmail"),
-  loginPassword:$("loginPassword"), loginError:$("loginError"),
-  detailDialog:$("detailDialog"), detailTitle:$("detailTitle"), detailContent:$("detailContent"),
-  productDialog:$("productDialog"), productForm:$("productForm"), productDialogTitle:$("productDialogTitle"),
-  productId:$("productId"), photoInput:$("photoInput"), photoThumbs:$("photoThumbs"),
-  fName:$("fName"), fCategory:$("fCategory"), fBrand:$("fBrand"), fArticle:$("fArticle"),
-  fPrice:$("fPrice"), fDelivery:$("fDelivery"), fSpecs:$("fSpecs"), fKeywords:$("fKeywords"),
-  fCost:$("fCost"), fSupplier:$("fSupplier"), fSupplierAddress:$("fSupplierAddress"),
-  fSupplierContact:$("fSupplierContact"), fCheckedDate:$("fCheckedDate"), fNotes:$("fNotes"),
-  fActive:$("fActive"), manualMarkup:$("manualMarkup"), applyManualMarkup:$("applyManualMarkup"),
-  marginInfo:$("marginInfo"), deleteProductBtn:$("deleteProductBtn"),
-  ownerCategoryAdd:$("ownerCategoryAdd"), newCategoryInForm:$("newCategoryInForm"),
-  addCategoryInFormBtn:$("addCategoryInFormBtn"),
-  manageDialog:$("manageDialog"), staffSection:$("staffSection"), staffForm:$("staffForm"),
-  staffEmail:$("staffEmail"), staffRole:$("staffRole"), staffList:$("staffList"),
-  categoryForm:$("categoryForm"), newCategoryName:$("newCategoryName"), categoryManager:$("categoryManager"),
-  sellerNameForm:$("sellerNameForm"), newSellerName:$("newSellerName"), sellerNamesList:$("sellerNamesList"),
-  toastHost:$("toastHost"),
-  ordersBtn:$("ordersBtn"), ordersBadge:$("ordersBadge"), myOrdersBtn:$("myOrdersBtn"),
-  sellerPickerWrap:$("sellerPickerWrap"), sellerPicker:$("sellerPicker"),
-  cartBtn:$("cartBtn"), cartBadge:$("cartBadge"), cartDialog:$("cartDialog"), cartItems:$("cartItems"),
-  cartTotal:$("cartTotal"), checkoutBtn:$("checkoutBtn"), checkoutDialog:$("checkoutDialog"),
-  checkoutForm:$("checkoutForm"), clientName:$("clientName"), clientPhone:$("clientPhone"),
-  orderNote:$("orderNote"), initialStatus:$("initialStatus"),
-  ordersDialog:$("ordersDialog"), ordersDialogTitle:$("ordersDialogTitle"),
-  ordersDialogSub:$("ordersDialogSub"), ordersList:$("ordersList"), orderTabs:$("orderTabs")
-};
+const ids = [
+  "loginBtn","logoutBtn","customerModeBtn","manageBtn","manageBtnDesktop","sideBottom","addProductBtn","mobileAddProductBtn",
+  "desktopCategories","mobileCategory","pageTitle","searchInput","searchSuggestions","clearSearchBtn","brandFilter","availabilityFilter","maxPrice","sortFilter","dynamicFilters","resultCount","stateBox","catalogGrid","recentSection","recentGrid","clearRecentBtn",
+  "bannerStrip","loginDialog","loginForm","loginEmail","loginPassword","loginError","detailDialog","detailTitle","detailSubtitle","detailContent",
+  "productDialog","productForm","productDialogTitle","productId","photoInput","photoThumbs","fName","fCategory","fBrand","fPrice","fPriceMode","fAvailability","fBadge","fDelivery","fOldPrice","fSaleEnd","fSpecs","fVariants","fVideoUrl","fRelated","fBundle","fCost","fSupplier","fSupplierAddress","fSupplierContact","fCheckedDate","fNotes","fActive","manualMarkup","applyManualMarkup","marginInfo","deleteProductBtn","ownerCategoryAdd","newCategoryInForm","addCategoryInFormBtn",
+  "manageDialog","staffSection","staffForm","staffEmail","staffRole","staffList","categoryForm","newCategoryName","categoryManager","sellerNameForm","newSellerName","sellerNamesList","bannerForm","bannerTitle","bannerSubtitle","bannerCategory","bannerManager","excelImport","exportExcelBtn","exportSatuBtn",
+  "toastHost","ordersBtn","ordersBadge","myOrdersBtn","sellerPickerWrap","sellerPicker","cartBtn","cartBadge","cartDialog","cartItems","cartTotal","checkoutBtn","checkoutDialog","checkoutForm","clientName","clientPhone","orderNote","initialStatus","ordersDialog","ordersDialogTitle","ordersDialogSub","ordersList","orderTabs",
+  "favoritesBtn","favoritesBadge","favoritesDialog","favoritesList","customerCartBtn","customerCartBadge","customerCartDialog","customerCartItems","customerCartTotal","sendCustomerCartBtn","contactsBtn","contactsDialog","contactWhatsappBtn","footerWhatsappBtn","helpWhatsappBtn","notFoundBtn","recentBtn",
+  "dashboardBtn","dashboardDialog","dashboardContent","bulkBtn","bulkDialog","bulkCategory","bulkMarkup","bulkVisibility","bulkSelectAll","applyBulkBtn","bulkProducts",
+  "lightboxDialog","lightboxClose","lightboxPrev","lightboxNext","lightboxStage","lightboxImage","lightboxCounter","zoomOutBtn","zoomResetBtn","zoomInBtn"
+];
+const el = Object.fromEntries(ids.map(id=>[id,$(id)]));
 
 const isAdmin = () => ["owner","admin"].includes(state.role);
 const isOwner = () => state.role === "owner";
@@ -52,506 +34,211 @@ const isSeller = () => state.role === "seller";
 const priv = () => isAdmin() && !state.customerMode;
 const money = n => new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(Number(n||0))+" ₸";
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const norm = s => String(s||"").toLowerCase().replace(/ё/g,"е").replace(/[^a-zа-я0-9]+/gi," ").trim();
+const uniq = a => [...new Set(a.filter(Boolean))];
 
-function toast(msg,error=false){
-  const d=document.createElement("div"); d.className="toast"+(error?" error":""); d.textContent=msg;
-  el.toastHost.appendChild(d); setTimeout(()=>d.remove(),3800);
-}
-function closeDialog(id){ const d=$(id); if(d?.open)d.close(); }
+function toast(msg,error=false){const d=document.createElement("div");d.className="toast"+(error?" error":"");d.textContent=msg;el.toastHost.appendChild(d);setTimeout(()=>d.remove(),3800)}
+function closeDialog(id){const d=$(id);if(d?.open)d.close()}
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeDialog(b.dataset.close));
 document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{if(e.target===d)d.close()}));
+function publicUrl(path){return path?supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl:""}
+function imgsFor(id){return state.images.filter(i=>i.product_id===id).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))}
+function catName(id){return state.categories.find(c=>c.id===id)?.name||"Без категории"}
+function availabilityLabel(v){return v==="in_stock"?"В наличии":v==="out_of_stock"?"Нет в наличии":"Под заказ"}
+function priceText(p){if(p.price_mode==="ask")return "Уточнить цену";return (p.price_mode==="from"?"от ":"")+money(p.price)}
+function validSale(p){return Number(p.old_price)>Number(p.price) && (!p.sale_end || new Date(p.sale_end+"T23:59:59")>=new Date())}
+function whatsappUrl(text=BASE_WA){return `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`}
+function openWhatsapp(text){window.open(whatsappUrl(text),"_blank","noopener")}
 
-function publicUrl(path){
-  if(!path)return "";
-  return supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
-}
-function imgsFor(productId){return state.images.filter(i=>i.product_id===productId).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));}
-function catName(id){return state.categories.find(c=>c.id===id)?.name||"Без категории";}
+function saveLocal(){localStorage.setItem("quatt-favorites",JSON.stringify(state.favorites));localStorage.setItem("quatt-recent",JSON.stringify(state.recent));localStorage.setItem("quatt-customer-cart",JSON.stringify(state.customerCart))}
+function loadLocal(){try{state.favorites=JSON.parse(localStorage.getItem("quatt-favorites")||"[]")}catch{state.favorites=[]}try{state.recent=JSON.parse(localStorage.getItem("quatt-recent")||"[]")}catch{state.recent=[]}try{state.customerCart=JSON.parse(localStorage.getItem("quatt-customer-cart")||"[]")}catch{state.customerCart=[]}}
 
-async function loadRole(){
-  if(!state.session){state.role="guest";state.email="";return;}
-  state.email=state.session.user.email||"";
-  const {data,error}=await supabase.rpc("catalog_role");
-  if(error){state.role="seller";console.warn(error);return;}
-  state.role=data||"seller";
-}
-
+async function loadRole(){if(!state.session){state.role="guest";state.email="";return}state.email=state.session.user.email||"";const {data,error}=await supabase.rpc("catalog_role");if(error){console.warn(error);state.role="seller";return}state.role=data||"seller"}
 async function loadData(){
   try{
     const catQ=supabase.from("categories").select("*").order("sort_order").order("name");
     const imgQ=supabase.from("product_images").select("*").order("sort_order");
-    let prodQ;
-    if(isAdmin()) prodQ=supabase.from("products").select("*").order("created_at",{ascending:false});
-    else prodQ=supabase.rpc("get_public_products");
-    const sellersQ=state.session
-      ? supabase.from("seller_names").select("*").order("sort_order").order("name")
-      : Promise.resolve({data:[],error:null});
-    const [cats,imgs,prods,sellers]=await Promise.all([catQ,imgQ,prodQ,sellersQ]);
-    if(cats.error)throw cats.error;if(imgs.error)throw imgs.error;if(prods.error)throw prods.error;if(sellers.error)throw sellers.error;
-    state.categories=cats.data||[];state.images=imgs.data||[];state.products=prods.data||[];state.sellerNames=sellers.data||[];
-    syncSelectedSeller();
-    render();
-  }catch(e){
-    console.error(e);
-    el.catalogGrid.classList.add("hidden");
-    el.stateBox.classList.remove("hidden");
-    el.stateBox.innerHTML=`<h2>Не удалось открыть каталог</h2><p>${esc(e.message||e)}</p><p class="fine">Если вы только что обновили каталог, сначала выполните SUPABASE_UPDATE_V2_3.sql.</p>`;
-  }
+    const prodQ=isAdmin()?supabase.from("products").select("*").order("created_at",{ascending:false}):supabase.rpc("get_public_products");
+    const sellersQ=state.session?supabase.from("seller_names").select("*").order("sort_order").order("name"):Promise.resolve({data:[],error:null});
+    const bannerQ=supabase.from("site_banners").select("*").order("sort_order").order("created_at");
+    const [cats,imgs,prods,sellers,banners]=await Promise.all([catQ,imgQ,prodQ,sellersQ,bannerQ]);
+    for(const q of [cats,imgs,prods,sellers,banners])if(q.error)throw q.error;
+    state.categories=cats.data||[];state.images=imgs.data||[];state.products=prods.data||[];state.sellerNames=sellers.data||[];state.banners=banners.data||[];
+    syncSelectedSeller();render();openFromUrl();
+  }catch(e){console.error(e);el.catalogGrid.classList.add("hidden");el.stateBox.classList.remove("hidden");el.stateBox.innerHTML=`<h2>Не удалось открыть каталог</h2><p>${esc(e.message||e)}</p><p class="fine">Если это произошло сразу после обновления, сначала выполните SUPABASE_UPDATE_V2_4.sql.</p>`}
 }
 
-function sellerSelectionKey(){return `quatt-seller-name:${state.email||"shared"}`;}
-function selectedSeller(){return state.sellerNames.find(x=>x.id===state.selectedSellerId)||null;}
-function syncSelectedSeller(){
-  if(!isSeller()){state.selectedSellerId=null;return;}
-  const active=state.sellerNames.filter(x=>x.active!==false);
-  const saved=localStorage.getItem(sellerSelectionKey());
-  if(saved&&active.some(x=>x.id===saved))state.selectedSellerId=saved;
-  else if(!active.some(x=>x.id===state.selectedSellerId))state.selectedSellerId=active[0]?.id||null;
-  if(state.selectedSellerId)localStorage.setItem(sellerSelectionKey(),state.selectedSellerId);
-  loadCart();
-}
-
+function sellerSelectionKey(){return `quatt-seller-name:${state.email||"shared"}`}
+function selectedSeller(){return state.sellerNames.find(x=>x.id===state.selectedSellerId)||null}
+function syncSelectedSeller(){if(!isSeller()){state.selectedSellerId=null;return}const active=state.sellerNames.filter(x=>x.active!==false);const saved=localStorage.getItem(sellerSelectionKey());if(saved&&active.some(x=>x.id===saved))state.selectedSellerId=saved;else if(!active.some(x=>x.id===state.selectedSellerId))state.selectedSellerId=active[0]?.id||null;if(state.selectedSellerId)localStorage.setItem(sellerSelectionKey(),state.selectedSellerId);loadCart()}
 function renderAuth(){
-  el.loginBtn.classList.toggle("hidden",!!state.session);
-  el.logoutBtn.classList.toggle("hidden",!state.session);
-  el.customerModeBtn.classList.toggle("hidden",!isAdmin());
-  el.manageBtn.classList.toggle("hidden",!isOwner());
-  el.sideBottom.classList.toggle("hidden",!isOwner());
-  el.addProductBtn.classList.toggle("hidden",!priv());
-  el.mobileAddProductBtn.classList.toggle("hidden",!priv());
-  el.ownerCategoryAdd.classList.toggle("hidden",!isOwner());
-  el.ordersBtn.classList.toggle("hidden",!isAdmin());
-  el.myOrdersBtn.classList.toggle("hidden",!isSeller());
-  el.cartBtn.classList.toggle("hidden",!isSeller());
-  el.sellerPickerWrap.classList.toggle("hidden",!isSeller());
-  if(isSeller()){
-    const active=state.sellerNames.filter(x=>x.active!==false);
-    el.sellerPicker.innerHTML=active.length
-      ? active.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")
-      : `<option value="">Нет имён продавцов</option>`;
-    el.sellerPicker.value=state.selectedSellerId||"";
-    el.sellerPicker.disabled=!active.length;
-  }
-  el.customerModeBtn.classList.toggle("active",state.customerMode);
-  el.customerModeBtn.textContent=state.customerMode?"↩ Вернуться к работе":"◉ Режим клиента";
-  renderCartBadge();
+  el.loginBtn.classList.toggle("hidden",!!state.session);el.logoutBtn.classList.toggle("hidden",!state.session);el.customerModeBtn.classList.toggle("hidden",!isAdmin());
+  el.manageBtn.classList.toggle("hidden",!isOwner());el.sideBottom.classList.toggle("hidden",!isOwner());el.addProductBtn.classList.toggle("hidden",!priv());el.mobileAddProductBtn.classList.toggle("hidden",!priv());
+  el.ordersBtn.classList.toggle("hidden",!isAdmin());el.dashboardBtn.classList.toggle("hidden",!isAdmin());el.bulkBtn.classList.toggle("hidden",!priv());
+  el.myOrdersBtn.classList.toggle("hidden",!isSeller());el.cartBtn.classList.toggle("hidden",!isSeller());el.sellerPickerWrap.classList.toggle("hidden",!isSeller());
+  if(isSeller()){const active=state.sellerNames.filter(x=>x.active!==false);el.sellerPicker.innerHTML=active.length?active.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join(""):`<option value="">Нет имён</option>`;el.sellerPicker.value=state.selectedSellerId||"";el.sellerPicker.disabled=!active.length}
+  el.customerModeBtn.textContent=state.customerMode?"◉ Выйти из режима клиента":"◉ Режим клиента";renderLocalBadges();
 }
 
 function renderCategories(){
-  const visible=state.products.filter(p=>priv()||p.active!==false);
-  const btn=(id,name,count)=>`<button class="nav ${state.cat===id?"selected":""}" data-cat="${id}"><span>${esc(name)}</span>${id==="all"?`<span class="count">${count}</span>`:`<span class="arrow">›</span>`}</button>`;
-  el.desktopCategories.innerHTML=btn("all","Все товары",visible.length)+state.categories.filter(c=>c.active||isAdmin()).map(c=>btn(c.id,c.name,0)).join("");
-  el.desktopCategories.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{state.cat=b.dataset.cat;render()});
-  el.mobileCategory.innerHTML=`<option value="all">Все товары</option>`+state.categories.filter(c=>c.active||isAdmin()).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
-  el.mobileCategory.value=state.cat;
-  el.pageTitle.textContent=state.cat==="all"?"Выберите то, что подходит":catName(state.cat);
-  el.fCategory.innerHTML=state.categories.filter(c=>c.active||isAdmin()).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  const cats=state.categories.filter(c=>c.active||isAdmin());
+  el.desktopCategories.innerHTML=`<button class="nav ${state.cat==="all"?"active":""}" data-cat="all">Все товары</button>`+cats.map(c=>`<button class="nav ${state.cat===c.id?"active":""}" data-cat="${c.id}">${esc(c.name)}</button>`).join("");
+  el.desktopCategories.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>setCat(b.dataset.cat));
+  el.mobileCategory.innerHTML=`<option value="all">Все категории</option>`+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");el.mobileCategory.value=state.cat;
+  el.fCategory.innerHTML=cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  el.bannerCategory.innerHTML=`<option value="">Без категории</option>`+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  el.bulkCategory.innerHTML=`<option value="">Категория — не менять</option>`+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
 }
-
-function filteredProducts(){
-  const q=state.q.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  let rows=state.products.filter(p=>{
-    if(!priv()&&p.active===false)return false;
-    if(state.cat!=="all"&&p.category_id!==state.cat)return false;
-    if(state.brand!=="all"&&(p.brand||"")!==state.brand)return false;
-    if(state.max&&Number(p.price)>Number(state.max))return false;
-    const hay=[p.name,p.brand,p.article,catName(p.category_id),p.specs,p.keywords].join(" ").toLowerCase();
-    return q.every(t=>hay.includes(t));
-  });
-  if(state.sort==="Цена: по возрастанию")rows=[...rows].sort((a,b)=>Number(a.price)-Number(b.price));
-  if(state.sort==="Цена: по убыванию")rows=[...rows].sort((a,b)=>Number(b.price)-Number(a.price));
-  return rows;
-}
-
+function setCat(v){state.cat=v;state.specFilters={};renderCategories();renderProducts()}
+function parseSpecs(text){const o={};String(text||"").split(/\r?\n/).forEach(line=>{const m=line.match(/^\s*([^:—-]{2,40})\s*[:—-]\s*(.+)\s*$/);if(m)o[m[1].trim()]=m[2].trim()});return o}
+function commonSpecKey(k){const n=norm(k);if(n.includes("цвет"))return "Цвет";if(n.includes("размер"))return "Размер";if(n.includes("диаметр")||n==="d")return "Диаметр";if(n.includes("мощност"))return "Мощность";if(n.includes("материал"))return "Материал";return null}
 function renderFilters(){
-  const brands=[...new Set(state.products.map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ru"));
-  el.brandFilter.innerHTML=`<option value="all">Все бренды</option>`+brands.map(b=>`<option>${esc(b)}</option>`).join("");
-  el.brandFilter.value=state.brand;
-  el.maxPrice.value=state.max;
-  el.sortFilter.value=state.sort;
-  el.searchInput.value=state.q;
-  el.clearSearchBtn.classList.toggle("hidden",!state.q);
+  const brands=uniq(state.products.map(p=>p.brand).filter(Boolean)).sort((a,b)=>a.localeCompare(b,"ru"));el.brandFilter.innerHTML=`<option value="all">Все бренды</option>`+brands.map(b=>`<option>${esc(b)}</option>`).join("");el.brandFilter.value=state.brand;
+  const values={};state.products.forEach(p=>Object.entries(parseSpecs(p.specs)).forEach(([k,v])=>{const ck=commonSpecKey(k);if(ck){values[ck]??=new Set();values[ck].add(v)}}));
+  el.dynamicFilters.innerHTML=Object.entries(values).filter(([,s])=>s.size>1).slice(0,5).map(([k,s])=>`<select class="choice" data-spec-filter="${esc(k)}"><option value="">${esc(k)}: все</option>${[...s].sort().map(v=>`<option ${state.specFilters[k]===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`).join("");
+  el.dynamicFilters.querySelectorAll("[data-spec-filter]").forEach(s=>s.onchange=()=>{state.specFilters[s.dataset.specFilter]=s.value;renderProducts()});
 }
-
+function filteredProducts(){
+  let arr=[...state.products];if(state.cat!=="all")arr=arr.filter(p=>p.category_id===state.cat);if(state.brand!=="all")arr=arr.filter(p=>p.brand===state.brand);if(state.availability!=="all")arr=arr.filter(p=>(p.availability||"order")===state.availability);if(state.max)arr=arr.filter(p=>Number(p.price)<=Number(state.max));
+  const q=norm(state.q);if(q)arr=arr.filter(p=>norm([p.name,p.brand,p.specs,p.keywords,catName(p.category_id)].join(" ")).includes(q));
+  for(const [k,v] of Object.entries(state.specFilters)){if(!v)continue;arr=arr.filter(p=>{const specs=parseSpecs(p.specs);return Object.entries(specs).some(([sk,sv])=>commonSpecKey(sk)===k&&sv===v)})}
+  if(state.sort==="Цена: по возрастанию")arr.sort((a,b)=>Number(a.price)-Number(b.price));else if(state.sort==="Цена: по убыванию")arr.sort((a,b)=>Number(b.price)-Number(a.price));else if(state.sort==="Популярные")arr.sort((a,b)=>(state.viewCounts[b.id]||0)-(state.viewCounts[a.id]||0));else arr.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));return arr;
+}
+function productCard(p,mini=false){const cover=imgsFor(p.id)[0];const fav=state.favorites.includes(p.id);const sale=validSale(p);return `<article class="product ${mini?"mini-product":""}" data-product-card="${p.id}"><a class="photo" href="${productLink(p.id)}" data-open-product="${p.id}">${cover?`<img src="${publicUrl(cover.image_path)}" alt="${esc(p.name)}" loading="lazy">`:`<span class="no-photo">Q</span>`}<span class="order-tag ${p.availability||"order"}">${esc(availabilityLabel(p.availability||"order"))}</span>${p.badge?`<span class="product-badge">${esc(p.badge)}</span>`:""}</a><button class="favorite ${fav?"on":""}" data-favorite="${p.id}" aria-label="Избранное">${fav?"♥":"♡"}</button><div class="product-info"><div class="product-category">${esc(catName(p.category_id))}${p.brand?" · "+esc(p.brand):""}</div><a class="product-title" href="${productLink(p.id)}" data-open-product="${p.id}">${esc(p.name)}</a><div class="price-row"><div class="product-price">${esc(priceText(p))}</div>${sale?`<span class="old-price">${money(p.old_price)}</span>`:""}</div><div class="delivery">◷ ${esc(p.delivery||"Срок уточняется")}</div>${priv()?`<div class="private-price">Закуп: ${money(p.cost)}<span>+${money(Number(p.price)-Number(p.cost))}</span></div>`:""}<div class="card-actions"><button class="small-btn" data-customer-add="${p.id}">＋ В корзину</button>${isSeller()?`<button class="small-btn seller-add" data-seller-add="${p.id}">＋ Продавцу</button>`:""}</div></div></article>`}
+function bindProductCards(root=document){root.querySelectorAll("[data-open-product]").forEach(b=>b.onclick=e=>{e.preventDefault();openDetail(b.dataset.openProduct)});root.querySelectorAll("[data-favorite]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(b.dataset.favorite)});root.querySelectorAll("[data-customer-add]").forEach(b=>b.onclick=e=>{e.stopPropagation();addCustomerCart(b.dataset.customerAdd)});root.querySelectorAll("[data-seller-add]").forEach(b=>b.onclick=e=>{e.stopPropagation();addToCart(b.dataset.sellerAdd);toast("Добавлено в корзину продавца")})}
 function renderProducts(){
-  const rows=filteredProducts();
-  el.resultCount.textContent=`${rows.length} товаров`;
-  if(!rows.length){
-    el.catalogGrid.classList.add("hidden");el.stateBox.classList.remove("hidden");
-    el.stateBox.innerHTML=state.products.length
-      ?`<h2>Ничего не найдено</h2><p>Измените поиск или фильтры.</p>`
-      :`<h2>Каталог готов к первым товарам</h2><p>${priv()?"Добавьте первый товар. Тестовый товар из старого сайта не переносился.":"Скоро здесь появятся товары, фотографии и розничные цены."}</p>`;
-    return;
-  }
-  el.stateBox.classList.add("hidden");el.catalogGrid.classList.remove("hidden");
-  el.catalogGrid.innerHTML=rows.map(p=>{
-    const im=imgsFor(p.id)[0];const cover=im?publicUrl(im.image_path):"";
-    return `<button class="product" data-product="${p.id}">
-      <div class="photo">${cover?`<img src="${cover}" alt="${esc(p.name)}">`:`<span style="font-size:34px">▣</span>`}
-        <span class="order-tag">${p.active===false?"Скрыт от клиента":"Под заказ"}</span></div>
-      <div class="product-info">
-        <div class="product-category">${esc(catName(p.category_id))}${p.brand?" · "+esc(p.brand):""}</div>
-        <h2>${esc(p.name)}</h2>
-        <div class="product-price">${money(p.price)}</div>
-        <div class="delivery">◷ ${esc(p.delivery||"Срок уточняется")}</div>
-        ${priv()?`<div class="private-price">Закуп: ${money(p.cost)}<span>+${money(Number(p.price)-Number(p.cost))}</span></div>`:""}
-      </div></button>`;
-  }).join("");
-  el.catalogGrid.querySelectorAll("[data-product]").forEach(b=>b.onclick=()=>openDetail(b.dataset.product));
+  const arr=filteredProducts();el.resultCount.textContent=`${arr.length} ${arr.length===1?"товар":"товаров"}`;el.stateBox.classList.toggle("hidden",arr.length>0);el.catalogGrid.classList.toggle("hidden",arr.length===0);if(!arr.length){el.stateBox.innerHTML=`<h2>Ничего не найдено</h2><p>Измени фильтры или напиши нам в WhatsApp — найдём товар под заказ.</p><button class="whatsapp-btn" id="emptyWhatsapp">Написать в WhatsApp</button>`;$("emptyWhatsapp").onclick=()=>openWhatsapp("Здравствуйте! Пришёл с сайта QUATT QURYLYS. Не нашёл нужный товар. Помогите подобрать / заказать.");return}el.catalogGrid.innerHTML=arr.map(p=>productCard(p)).join("");bindProductCards(el.catalogGrid);renderRecent();
 }
+function renderBanners(){const rows=state.banners.filter(b=>b.active!==false);el.bannerStrip.classList.toggle("hidden",!rows.length);el.bannerStrip.innerHTML=rows.map(b=>`<button class="hero-banner" data-banner-cat="${b.category_id||"all"}"><strong>${esc(b.title)}</strong>${b.subtitle?`<span>${esc(b.subtitle)}</span>`:""}</button>`).join("");el.bannerStrip.querySelectorAll("[data-banner-cat]").forEach(b=>b.onclick=()=>{setCat(b.dataset.bannerCat);window.scrollTo({top:0,behavior:"smooth"})})}
+function renderRecent(){const rows=state.recent.map(id=>state.products.find(p=>p.id===id)).filter(Boolean).slice(0,8);el.recentSection.classList.toggle("hidden",!rows.length);el.recentGrid.innerHTML=rows.map(p=>productCard(p,true)).join("");bindProductCards(el.recentGrid)}
+function render(){renderAuth();renderCategories();renderFilters();renderBanners();renderProducts();renderLocalBadges()}
 
-function render(){
-  renderAuth();renderCategories();renderFilters();renderProducts();
-}
-
-function openDetail(id){
-  const p=state.products.find(x=>x.id===id);if(!p)return;
-  el.detailTitle.textContent=p.name;
-  const pics=imgsFor(p.id);
+function updateSeo(p=null){const title=p?`${p.name} — QUATT QURYLYS`:`QUATT QURYLYS — Каталог товаров`;document.title=title;document.querySelector('meta[property="og:title"]')?.setAttribute("content",title);const desc=p?`${p.name}${p.brand?" · "+p.brand:""}. ${availabilityLabel(p.availability||"order")}. QUATT QURYLYS, Атырау.`:"Строительные товары QUATT QURYLYS в Атырау.";document.querySelector('meta[name="description"]')?.setAttribute("content",desc);document.querySelector('meta[property="og:description"]')?.setAttribute("content",desc)}
+function productLink(id){const u=new URL(location.href);u.searchParams.set("product",id);return u.toString()}
+function openFromUrl(){const id=new URL(location.href).searchParams.get("product");if(id&&state.products.some(p=>p.id===id)&&!el.detailDialog.open)openDetail(id,false)}
+function specsHtml(text){const o=parseSpecs(text);const entries=Object.entries(o);if(entries.length)return `<div class="spec-table">${entries.map(([k,v])=>`<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join("")}</div>`;return `<p class="spec-text">${esc(text||"Характеристики уточняются")}</p>`}
+function renderVariants(p){const v=Array.isArray(p.variants)?p.variants:[];if(!v.length)return "";return `<section class="detail-section"><h3>Варианты</h3><div class="variant-list">${v.map(x=>`<div><span>${esc(x.name)}</span><strong>${x.price?money(x.price):"Уточнить"}</strong></div>`).join("")}</div></section>`}
+function relatedProducts(p,type){let ids=type==="bundle"?(p.bundle_product_ids||[]):(p.related_product_ids||[]);let rows=ids.map(id=>state.products.find(x=>x.id===id)).filter(Boolean);if(!rows.length&&type==="related")rows=state.products.filter(x=>x.id!==p.id&&x.category_id===p.category_id).slice(0,4);return rows.slice(0,6)}
+async function recordView(id){supabase.from("product_view_events").insert({product_id:id}).then(()=>{});state.recent=[id,...state.recent.filter(x=>x!==id)].slice(0,20);saveLocal();renderLocalBadges()}
+function videoHtml(url){if(!url)return "";const u=String(url);const yt=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([A-Za-z0-9_-]{6,})/);if(yt)return `<section class="detail-section"><h3>Видео товара</h3><div class="video-wrap"><iframe src="https://www.youtube.com/embed/${yt[1]}" title="Видео товара" allowfullscreen loading="lazy"></iframe></div></section>`;if(/\.(mp4|webm)(?:\?|$)/i.test(u))return `<section class="detail-section"><h3>Видео товара</h3><video class="product-video" src="${esc(u)}" controls playsinline></video></section>`;return `<p><a class="text-link" href="${esc(u)}" target="_blank" rel="noopener">▶ Смотреть видео товара</a></p>`}
+function openDetail(id,pushUrl=true){
+  const p=state.products.find(x=>x.id===id);if(!p)return;recordView(id);updateSeo(p);if(pushUrl){const u=new URL(location.href);u.searchParams.set("product",id);history.replaceState(null,"",u)}
+  el.detailTitle.textContent=p.name;el.detailSubtitle.textContent=`${catName(p.category_id)}${p.brand?" · "+p.brand:""}`;const pics=imgsFor(p.id);const sale=validSale(p);const similar=relatedProducts(p,"related"),bundle=relatedProducts(p,"bundle");
+  const wa=`Здравствуйте! Пришёл с сайта QUATT QURYLYS. Хочу уточнить наличие / заказать: ${p.name}${p.brand?" ("+p.brand+")":""}.\n${productLink(p.id)}`;
   el.detailContent.innerHTML=`
-    ${pics.length?`<div class="detail-photos">${pics.map(i=>`<img src="${publicUrl(i.image_path)}" alt="${esc(p.name)}">`).join("")}</div>`:""}
-    <div class="detail-price">${money(p.price)}</div>
-    <p class="delivery">◷ Срок поставки: ${esc(p.delivery||"Уточняется")}</p>
-    <div class="specs"><div>Бренд <strong>${esc(p.brand||"Не указан")}</strong></div><div>Артикул <strong>${esc(p.article||"Не указан")}</strong></div><p>${esc(p.specs||"Характеристики уточняются")}</p></div>
-    <p class="fine">Перед оформлением продавец подтвердит актуальную цену и возможность поставки.</p>
-    ${priv()?`<section class="internal">
-      <h3>✓ Внутренняя информация</h3>
-      <div class="stats"><div>Закуп<strong>${money(p.cost)}</strong></div><div>Маржа<strong>${money(Number(p.price)-Number(p.cost))}</strong></div><div>Маржа, %<strong>${Number(p.price)?(((Number(p.price)-Number(p.cost))/Number(p.price))*100).toFixed(1):0}%</strong></div></div>
-      <p><b>Поставщик:</b> ${esc(p.supplier||"Не указан")}</p><p>${esc(p.supplier_address||"")} ${esc(p.supplier_contact||"")}</p>
-      <p>Цена проверена: ${esc(p.checked_date||"Не указано")}</p><p>${esc(p.notes||"")}</p>
-      <button class="primary" id="editFromDetail">✎ Редактировать</button>
-    </section>`:""}
-    ${isSeller()?`<button class="primary cart-add" id="addToCartFromDetail">＋ Добавить в корзину</button>`:""}`;
+    ${pics.length?`<div class="detail-photos">${pics.map((i,idx)=>`<button data-lightbox-index="${idx}"><img src="${publicUrl(i.image_path)}" alt="${esc(p.name)}"></button>`).join("")}</div>`:`<div class="detail-placeholder">Q</div>`}
+    <div class="detail-buy-row"><div><div class="detail-price">${esc(priceText(p))}${sale?` <span class="old-price big">${money(p.old_price)}</span>`:""}</div><div class="availability-line">${esc(availabilityLabel(p.availability||"order"))}${p.delivery?` · ${esc(p.delivery)}`:""}</div></div><button id="detailWhatsapp" class="whatsapp-btn">WhatsApp</button></div>
+    ${p.checked_date?`<p class="fine">Цена проверена: ${new Date(p.checked_date+"T00:00:00").toLocaleDateString("ru-RU")}</p>`:""}
+    <section class="detail-section"><h3>Характеристики</h3>${specsHtml(p.specs)}</section>${renderVariants(p)}
+    ${videoHtml(p.video_url)}
+    <div class="detail-actions"><button id="detailCustomerAdd" class="primary">＋ В корзину</button><button id="shareProductBtn" class="small-btn">Поделиться</button><button id="qrProductBtn" class="small-btn">QR-код</button>${priv()?`<button id="printPriceBtn" class="small-btn">Печать ценника</button>`:""}</div>
+    ${similar.length?`<section class="detail-section"><h3>Похожие товары</h3><div class="mini-grid">${similar.map(x=>productCard(x,true)).join("")}</div></section>`:""}
+    ${bundle.length?`<section class="detail-section"><h3>С этим товаром покупают</h3><div class="mini-grid">${bundle.map(x=>productCard(x,true)).join("")}</div></section>`:""}
+    ${priv()?`<section class="internal"><h3>✓ Внутренняя информация</h3><div class="stats"><div>Закуп<strong>${money(p.cost)}</strong></div><div>Маржа<strong>${money(Number(p.price)-Number(p.cost))}</strong></div><div>Маржа, %<strong>${Number(p.price)?(((Number(p.price)-Number(p.cost))/Number(p.price))*100).toFixed(1):0}%</strong></div></div><p><b>Поставщик:</b> ${esc(p.supplier||"Не указан")}</p><p>${esc(p.supplier_address||"")} ${esc(p.supplier_contact||"")}</p><p>${esc(p.notes||"")}</p><button class="primary" id="editFromDetail">✎ Редактировать</button></section>`:""}
+    ${isSeller()?`<button class="primary cart-add" id="addToCartFromDetail">＋ Добавить в корзину продавца</button>`:""}`;
   el.detailDialog.showModal();
-  const edit=$("editFromDetail");if(edit)edit.onclick=()=>{el.detailDialog.close();openProduct(p)};
-  const add=$("addToCartFromDetail");if(add)add.onclick=()=>{addToCart(p.id);toast("Добавлено в корзину")};
+  el.detailContent.querySelectorAll("[data-lightbox-index]").forEach(b=>b.onclick=()=>openLightbox(pics.map(i=>publicUrl(i.image_path)),Number(b.dataset.lightboxIndex)));
+  bindProductCards(el.detailContent);$("detailWhatsapp").onclick=()=>openWhatsapp(wa);$("detailCustomerAdd").onclick=()=>addCustomerCart(p.id);
+  $("shareProductBtn").onclick=()=>shareProduct(p);$("qrProductBtn").onclick=()=>showQR(p);const pr=$("printPriceBtn");if(pr)pr.onclick=()=>printPrice(p);const edit=$("editFromDetail");if(edit)edit.onclick=()=>{el.detailDialog.close();openProduct(p)};const add=$("addToCartFromDetail");if(add)add.onclick=()=>{addToCart(p.id);toast("Добавлено в корзину продавца")};
 }
+el.detailDialog.addEventListener("close",()=>{const u=new URL(location.href);u.searchParams.delete("product");history.replaceState(null,"",u);updateSeo()});
+async function shareProduct(p){const data={title:p.name,text:`${p.name} — ${priceText(p)}`,url:productLink(p.id)};try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(data.url);toast("Ссылка скопирована")}}catch{}}
+function showQR(p){const url=productLink(p.id);const qr=`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(url)}`;const w=window.open("","_blank");if(w){try{w.opener=null}catch{}w.document.write(`<title>QR — ${esc(p.name)}</title><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(p.name)}</h2><img src="${qr}" width="320" height="320"><p>${esc(url)}</p><p><a href="${qr}" download="QUATT-QR.png">Сохранить QR</a></p></body>`)} }
+function printPrice(p){const qr=`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(productLink(p.id))}`;const w=window.open("","_blank");if(!w)return;w.document.write(`<html><head><title>Ценник</title><style>body{font-family:Arial;margin:20px}.tag{border:3px solid #000;padding:20px;width:620px}.logo{font-size:30px;font-weight:900}.logo b{background:#000;color:#faf100;padding:5px 10px}.name{font-size:26px;font-weight:700;margin:24px 0}.price{font-size:56px;font-weight:900}.row{display:flex;justify-content:space-between;align-items:end}img{width:150px;height:150px}</style></head><body onload="print()"><div class="tag"><div class="logo"><b>QUATT</b> QURYLYS</div><div class="name">${esc(p.name)}</div><div class="row"><div><div class="price">${esc(priceText(p))}</div><p>Нұрсая 17 · 09:00–21:00</p></div><img src="${qr}"></div></div></body></html>`);w.document.close()}
 
-function resetProductForm(){
-  state.editing=null;state.formImages=[];
-  el.productForm.reset();el.productId.value="";el.productDialogTitle.textContent="Новый товар";
-  el.fDelivery.value="1 день";el.fCheckedDate.value=new Date().toISOString().slice(0,10);el.fActive.checked=true;
-  if(state.cat!=="all")el.fCategory.value=state.cat;
-  else if(state.categories[0])el.fCategory.value=state.categories[0].id;
-  el.deleteProductBtn.classList.add("hidden");renderFormImages();updateMargin();
-}
-function openProduct(p=null){
-  if(!priv())return;
-  resetProductForm();
-  if(p){
-    state.editing=p;state.formImages=imgsFor(p.id).map(i=>({...i}));
-    el.productDialogTitle.textContent="Редактировать товар";el.productId.value=p.id;
-    el.fName.value=p.name||"";el.fCategory.value=p.category_id||"";el.fBrand.value=p.brand||"";el.fArticle.value=p.article||"";
-    el.fPrice.value=p.price??"";el.fDelivery.value=p.delivery||"";el.fSpecs.value=p.specs||"";el.fKeywords.value=p.keywords||"";
-    el.fCost.value=p.cost??"";el.fSupplier.value=p.supplier||"";el.fSupplierAddress.value=p.supplier_address||"";
-    el.fSupplierContact.value=p.supplier_contact||"";el.fCheckedDate.value=p.checked_date||"";el.fNotes.value=p.notes||"";
-    el.fActive.checked=p.active!==false;el.deleteProductBtn.classList.remove("hidden");
-  }
-  renderFormImages();updateMargin();el.productDialog.showModal();
-}
-function renderFormImages(){
-  el.photoThumbs.innerHTML=state.formImages.map((i,idx)=>`<div class="thumb"><img src="${i.preview||publicUrl(i.image_path)}" alt=""><button type="button" data-rm="${idx}">Удалить</button></div>`).join("");
-  el.photoThumbs.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{state.formImages.splice(Number(b.dataset.rm),1);renderFormImages()});
-}
-function updateMargin(){el.marginInfo.textContent="Маржа: "+money(Number(el.fPrice.value||0)-Number(el.fCost.value||0));}
-function roundRetail(value){return Math.ceil(Number(value||0)/100)*100;}
-function applyMarkup(n){el.fPrice.value=roundRetail(Number(el.fCost.value||0)*(1+Number(n)/100));updateMargin();}
-document.querySelectorAll("[data-markup]").forEach(b=>b.onclick=()=>applyMarkup(b.dataset.markup));
-el.applyManualMarkup.onclick=()=>{const n=Number(el.manualMarkup.value);if(!Number.isFinite(n)||n<0)return toast("Укажи корректный процент",true);applyMarkup(n)};
-el.fCost.oninput=updateMargin;el.fPrice.oninput=updateMargin;
+function openLightbox(images,index=0){if(!images.length)return;state.lightbox.images=images;state.lightbox.index=index;resetZoom();renderLightbox();el.lightboxDialog.showModal()}
+function renderLightbox(){const l=state.lightbox;el.lightboxImage.src=l.images[l.index];el.lightboxCounter.textContent=`${l.index+1} / ${l.images.length}`;applyZoom()}
+function resetZoom(){Object.assign(state.lightbox,{scale:1,x:0,y:0,lastDist:0});applyZoom()}
+function applyZoom(){const l=state.lightbox;if(el.lightboxImage)el.lightboxImage.style.transform=`translate(${l.x}px,${l.y}px) scale(${l.scale})`;if(el.zoomResetBtn)el.zoomResetBtn.textContent=`${Math.round(l.scale*100)}%`}
+function zoomBy(delta){state.lightbox.scale=Math.max(1,Math.min(5,state.lightbox.scale+delta));if(state.lightbox.scale===1){state.lightbox.x=0;state.lightbox.y=0}applyZoom()}
+function stepLightbox(d){const l=state.lightbox;l.index=(l.index+d+l.images.length)%l.images.length;resetZoom();renderLightbox()}
+el.lightboxClose.onclick=()=>el.lightboxDialog.close();el.lightboxPrev.onclick=()=>stepLightbox(-1);el.lightboxNext.onclick=()=>stepLightbox(1);el.zoomInBtn.onclick=()=>zoomBy(.4);el.zoomOutBtn.onclick=()=>zoomBy(-.4);el.zoomResetBtn.onclick=resetZoom;el.lightboxStage.addEventListener("wheel",e=>{e.preventDefault();zoomBy(e.deltaY<0?.25:-.25)},{passive:false});
+el.lightboxStage.addEventListener("pointerdown",e=>{el.lightboxStage.setPointerCapture(e.pointerId);state.lightbox.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY})});
+el.lightboxStage.addEventListener("pointermove",e=>{const l=state.lightbox;if(!l.pointers.has(e.pointerId))return;const prev=l.pointers.get(e.pointerId);l.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const pts=[...l.pointers.values()];if(pts.length===1&&l.scale>1){l.x+=e.clientX-prev.x;l.y+=e.clientY-prev.y;applyZoom()}else if(pts.length===2){const dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);if(l.lastDist)l.scale=Math.max(1,Math.min(5,l.scale*dist/l.lastDist));l.lastDist=dist;applyZoom()}});
+function endPointer(e){state.lightbox.pointers.delete(e.pointerId);if(state.lightbox.pointers.size<2)state.lightbox.lastDist=0}el.lightboxStage.addEventListener("pointerup",endPointer);el.lightboxStage.addEventListener("pointercancel",endPointer);el.lightboxStage.ondblclick=()=>state.lightbox.scale>1?resetZoom():zoomBy(1);
 
-el.photoInput.onchange=()=>{
-  const files=[...el.photoInput.files||[]];
-  if(state.formImages.length+files.length>5){toast("Можно добавить до 5 фото",true);el.photoInput.value="";return;}
-  for(const f of files){
-    if(f.size>8*1024*1024||!["image/jpeg","image/png","image/webp"].includes(f.type)){toast("Фото JPG, PNG или WebP до 8 МБ",true);continue}
-    state.formImages.push({file:f,preview:URL.createObjectURL(f)});
-  }
-  el.photoInput.value="";renderFormImages();
-};
+function autoKeywords(){const c=catName(el.fCategory.value);const specs=Object.values(parseSpecs(el.fSpecs.value));return uniq([el.fName.value,el.fBrand.value,c,...specs].flatMap(x=>String(x||"").split(/[\s,;/]+/)).map(x=>x.trim()).filter(x=>x.length>1)).join(", ")}
+function parseVariantsInput(text){return String(text||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(line=>{const [name,price]=line.split("|").map(x=>x.trim());return {name,price:Number(price)||null}}).filter(x=>x.name)}
+function variantsToText(v){return Array.isArray(v)?v.map(x=>`${x.name}${x.price?" | "+x.price:""}`).join("\n"):""}
+function selectedValues(sel){return [...sel.selectedOptions].map(o=>o.value).filter(Boolean)}
+function setSelectedValues(sel,vals=[]){[...sel.options].forEach(o=>o.selected=vals.includes(o.value))}
+function renderRelationOptions(currentId=""){const opts=state.products.filter(p=>p.id!==currentId).sort((a,b)=>a.name.localeCompare(b.name,"ru")).map(p=>`<option value="${p.id}">${esc(p.name)}${p.brand?" · "+esc(p.brand):""}</option>`).join("");el.fRelated.innerHTML=opts;el.fBundle.innerHTML=opts}
+function resetProductForm(){state.editing=null;state.formImages=[];el.productForm.reset();el.productId.value="";el.productDialogTitle.textContent="Новый товар";el.fDelivery.value="1 день";el.fCheckedDate.value=new Date().toISOString().slice(0,10);el.fActive.checked=true;el.fAvailability.value="order";el.fPriceMode.value="show";if(state.cat!=="all")el.fCategory.value=state.cat;else if(state.categories[0])el.fCategory.value=state.categories[0].id;el.deleteProductBtn.classList.add("hidden");renderRelationOptions();renderFormImages();updateMargin()}
+function openProduct(p=null){if(!priv())return;resetProductForm();if(p){state.editing=p;state.formImages=imgsFor(p.id).map(i=>({...i}));el.productDialogTitle.textContent="Редактировать товар";el.productId.value=p.id;el.fName.value=p.name||"";el.fCategory.value=p.category_id||"";el.fBrand.value=p.brand||"";el.fPrice.value=p.price??"";el.fPriceMode.value=p.price_mode||"show";el.fAvailability.value=p.availability||"order";el.fBadge.value=p.badge||"";el.fDelivery.value=p.delivery||"";el.fOldPrice.value=p.old_price??"";el.fSaleEnd.value=p.sale_end||"";el.fSpecs.value=p.specs||"";el.fVariants.value=variantsToText(p.variants);el.fVideoUrl.value=p.video_url||"";el.fCost.value=p.cost??"";el.fSupplier.value=p.supplier||"";el.fSupplierAddress.value=p.supplier_address||"";el.fSupplierContact.value=p.supplier_contact||"";el.fCheckedDate.value=p.checked_date||"";el.fNotes.value=p.notes||"";el.fActive.checked=p.active!==false;renderRelationOptions(p.id);setSelectedValues(el.fRelated,p.related_product_ids||[]);setSelectedValues(el.fBundle,p.bundle_product_ids||[]);el.deleteProductBtn.classList.remove("hidden")}renderFormImages();updateMargin();el.productDialog.showModal()}
+function renderFormImages(){el.photoThumbs.innerHTML=state.formImages.map((i,idx)=>`<div class="thumb"><img src="${i.preview||publicUrl(i.image_path)}" alt=""><button type="button" data-rm="${idx}">Удалить</button></div>`).join("");el.photoThumbs.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{state.formImages.splice(Number(b.dataset.rm),1);renderFormImages()})}
+function updateMargin(){el.marginInfo.textContent="Маржа: "+money(Number(el.fPrice.value||0)-Number(el.fCost.value||0))}
+function roundRetail(v){return Math.ceil(Number(v||0)/100)*100}
+function applyMarkup(n){el.fPrice.value=roundRetail(Number(el.fCost.value||0)*(1+Number(n)/100));updateMargin()}
+document.querySelectorAll("[data-markup]").forEach(b=>b.onclick=()=>applyMarkup(b.dataset.markup));el.applyManualMarkup.onclick=()=>{const n=Number(el.manualMarkup.value);if(!Number.isFinite(n)||n<0)return toast("Укажи корректный процент",true);applyMarkup(n)};el.fCost.oninput=updateMargin;el.fPrice.oninput=updateMargin;
+async function compressImage(file){if(file.size>20*1024*1024)throw new Error(`${file.name}: больше 20 МБ`);if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error(`${file.name}: нужен JPG, PNG или WebP`);const bmp=await createImageBitmap(file);const max=2500;const scale=Math.min(1,max/Math.max(bmp.width,bmp.height));const c=document.createElement("canvas");c.width=Math.max(1,Math.round(bmp.width*scale));c.height=Math.max(1,Math.round(bmp.height*scale));c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);bmp.close();const blob=await new Promise(r=>c.toBlob(r,"image/webp",.86));return new File([blob||file],file.name.replace(/\.[^.]+$/,"")+".webp",{type:"image/webp"})}
+el.photoInput.onchange=async()=>{const files=[...el.photoInput.files||[]];if(state.formImages.length+files.length>5){toast("Можно добавить до 5 фото",true);el.photoInput.value="";return}for(const f of files){try{const compact=await compressImage(f);state.formImages.push({file:compact,preview:URL.createObjectURL(compact)})}catch(e){toast(e.message,true)}}el.photoInput.value="";renderFormImages()};
+async function uploadNewImages(productId){let order=0;const kept=[];for(const item of state.formImages){if(item.id){kept.push(item);order++;continue}const path=`${productId}/${crypto.randomUUID()}.webp`;const up=await supabase.storage.from(STORAGE_BUCKET).upload(path,item.file,{cacheControl:"3600",upsert:false,contentType:"image/webp"});if(up.error)throw up.error;const ins=await supabase.from("product_images").insert({product_id:productId,image_path:path,sort_order:order}).select().single();if(ins.error)throw ins.error;kept.push(ins.data);order++}return kept}
+async function syncRemovedImages(productId){const before=imgsFor(productId),keptIds=new Set(state.formImages.filter(i=>i.id).map(i=>i.id));const removed=before.filter(i=>!keptIds.has(i.id));if(!removed.length)return;await supabase.storage.from(STORAGE_BUCKET).remove(removed.map(i=>i.image_path));for(const i of removed){const r=await supabase.from("product_images").delete().eq("id",i.id);if(r.error)throw r.error}}
+function findDuplicate(name,brand,id){const n=norm(name),b=norm(brand);return state.products.find(p=>p.id!==id&&norm(p.name)===n&&(!b||norm(p.brand)===b))}
+el.productForm.onsubmit=async e=>{e.preventDefault();const id=el.productId.value||crypto.randomUUID();const dup=findDuplicate(el.fName.value,el.fBrand.value,id);if(dup&&!confirm(`Похожий товар уже есть: «${dup.name}». Всё равно сохранить?`))return;const cost=Number(el.fCost.value||0),price=Number(el.fPrice.value||0),markup=cost?((price/cost)-1)*100:0;const payload={id,name:el.fName.value.trim(),category_id:el.fCategory.value||null,brand:el.fBrand.value.trim()||null,price,cost,markup,delivery:el.fDelivery.value.trim()||null,specs:el.fSpecs.value.trim()||null,keywords:autoKeywords(),supplier:el.fSupplier.value.trim()||null,supplier_address:el.fSupplierAddress.value.trim()||null,supplier_contact:el.fSupplierContact.value.trim()||null,checked_date:el.fCheckedDate.value||null,notes:el.fNotes.value.trim()||null,active:el.fActive.checked,availability:el.fAvailability.value,badge:el.fBadge.value||null,price_mode:el.fPriceMode.value,old_price:el.fOldPrice.value?Number(el.fOldPrice.value):null,sale_end:el.fSaleEnd.value||null,video_url:el.fVideoUrl.value.trim()||null,variants:parseVariantsInput(el.fVariants.value),related_product_ids:selectedValues(el.fRelated),bundle_product_ids:selectedValues(el.fBundle)};try{const r=el.productId.value?await supabase.from("products").update(payload).eq("id",id):await supabase.from("products").insert(payload);if(r.error)throw r.error;await syncRemovedImages(id);await uploadNewImages(id);el.productDialog.close();toast("Товар сохранён");await loadData()}catch(err){console.error(err);toast(err.message||String(err),true)}};
+el.deleteProductBtn.onclick=async()=>{const id=el.productId.value;if(!id||!confirm("Удалить товар полностью?"))return;try{const imgs=imgsFor(id);if(imgs.length)await supabase.storage.from(STORAGE_BUCKET).remove(imgs.map(i=>i.image_path));const r=await supabase.from("products").delete().eq("id",id);if(r.error)throw r.error;el.productDialog.close();toast("Товар удалён");await loadData()}catch(e){toast(e.message||String(e),true)}};
 
-async function uploadNewImages(productId){
-  let order=0;const kept=[];
-  for(const item of state.formImages){
-    if(item.id){kept.push(item);order++;continue;}
-    const ext=(item.file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
-    const path=`${productId}/${crypto.randomUUID()}.${ext}`;
-    const up=await supabase.storage.from(STORAGE_BUCKET).upload(path,item.file,{cacheControl:"3600",upsert:false});
-    if(up.error)throw up.error;
-    const ins=await supabase.from("product_images").insert({product_id:productId,image_path:path,sort_order:order}).select().single();
-    if(ins.error)throw ins.error;kept.push(ins.data);order++;
-  }
-  return kept;
-}
-async function syncRemovedImages(productId){
-  const before=imgsFor(productId), keptIds=new Set(state.formImages.filter(i=>i.id).map(i=>i.id));
-  const removed=before.filter(i=>!keptIds.has(i.id));
-  if(!removed.length)return;
-  await supabase.storage.from(STORAGE_BUCKET).remove(removed.map(i=>i.image_path));
-  const ids=removed.map(i=>i.id);for(const id of ids){const r=await supabase.from("product_images").delete().eq("id",id);if(r.error)throw r.error;}
-}
-
-el.productForm.onsubmit=async e=>{
-  e.preventDefault();
-  const id=el.productId.value||crypto.randomUUID();
-  const cost=Number(el.fCost.value||0),price=Number(el.fPrice.value||0);
-  const markup=cost?((price/cost)-1)*100:0;
-  const payload={id,name:el.fName.value.trim(),category_id:el.fCategory.value||null,brand:el.fBrand.value.trim()||null,article:el.fArticle.value.trim()||null,
-    price,cost,markup,delivery:el.fDelivery.value.trim()||null,specs:el.fSpecs.value.trim()||null,keywords:el.fKeywords.value.trim()||null,
-    supplier:el.fSupplier.value.trim()||null,supplier_address:el.fSupplierAddress.value.trim()||null,supplier_contact:el.fSupplierContact.value.trim()||null,
-    checked_date:el.fCheckedDate.value||null,notes:el.fNotes.value.trim()||null,active:el.fActive.checked};
-  try{
-    let r;if(el.productId.value)r=await supabase.from("products").update(payload).eq("id",id);
-    else r=await supabase.from("products").insert(payload);
-    if(r.error)throw r.error;
-    await syncRemovedImages(id);await uploadNewImages(id);
-    el.productDialog.close();toast("Товар сохранён");await loadData();
-  }catch(err){console.error(err);toast(err.message||String(err),true)}
-};
-
-el.deleteProductBtn.onclick=async()=>{
-  const id=el.productId.value;if(!id||!confirm("Удалить товар полностью?"))return;
-  try{
-    const imgs=imgsFor(id);if(imgs.length)await supabase.storage.from(STORAGE_BUCKET).remove(imgs.map(i=>i.image_path));
-    const r=await supabase.from("products").delete().eq("id",id);if(r.error)throw r.error;
-    el.productDialog.close();toast("Товар удалён");await loadData();
-  }catch(e){toast(e.message||String(e),true)}
-};
-
-async function addCategory(name,selectAfter=false){
-  name=name.trim();if(!name)return null;
-  const exists=state.categories.find(c=>c.name.toLowerCase()===name.toLowerCase());
-  if(exists){if(selectAfter)el.fCategory.value=exists.id;return exists}
-  const maxSort=Math.max(0,...state.categories.map(c=>c.sort_order||0));
-  const r=await supabase.from("categories").insert({name,sort_order:maxSort+10,active:true}).select().single();
-  if(r.error)throw r.error;await loadData();if(selectAfter)el.fCategory.value=r.data.id;return r.data;
-}
+async function addCategory(name,selectAfter=false){name=name.trim();if(!name)return null;const exists=state.categories.find(c=>c.name.toLowerCase()===name.toLowerCase());if(exists){if(selectAfter)el.fCategory.value=exists.id;return exists}const maxSort=Math.max(0,...state.categories.map(c=>c.sort_order||0));const r=await supabase.from("categories").insert({name,sort_order:maxSort+10,active:true}).select().single();if(r.error)throw r.error;await loadData();if(selectAfter)el.fCategory.value=r.data.id;return r.data}
 el.addCategoryInFormBtn.onclick=async()=>{try{const c=await addCategory(el.newCategoryInForm.value,true);if(c){el.newCategoryInForm.value="";toast("Категория добавлена")}}catch(e){toast(e.message||String(e),true)}};
+async function openManage(){if(!isOwner())return;el.manageDialog.showModal();await Promise.all([loadStaff(),renderCategoryManager(),renderSellerNamesManager(),renderBannerManager()])}
+async function loadStaff(){const r=await supabase.from("staff_roles").select("*").order("email");if(r.error)return toast(r.error.message,true);state.staff=r.data||[];el.staffList.innerHTML=state.staff.map(s=>`<div class="member"><span>${esc(s.email)}</span><span>${s.role==="admin"?"Администратор":"Продавец"}</span><span class="actions"><button class="small-btn" data-staff-del="${esc(s.email)}">Удалить</button></span></div>`).join("");el.staffList.querySelectorAll("[data-staff-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Удалить доступ сотрудника?"))return;const r=await supabase.from("staff_roles").delete().eq("email",b.dataset.staffDel);if(r.error)toast(r.error.message,true);else{toast("Доступ удалён");loadStaff()}})}
+el.staffForm.onsubmit=async e=>{e.preventDefault();const r=await supabase.from("staff_roles").upsert({email:el.staffEmail.value.trim().toLowerCase(),role:el.staffRole.value},{onConflict:"email"});if(r.error)return toast(r.error.message,true);el.staffEmail.value="";toast("Доступ сохранён");loadStaff()};
+async function renderSellerNamesManager(){const rows=state.sellerNames||[];el.sellerNamesList.innerHTML=rows.length?rows.map(x=>`<div class="seller-name-row"><input data-seller-name="${x.id}" value="${esc(x.name)}"><label class="inline-check"><input type="checkbox" data-seller-active="${x.id}" ${x.active!==false?"checked":""}> Активен</label><div class="actions"><button class="small-btn" data-seller-save="${x.id}">Сохранить</button><button class="small-btn danger-lite" data-seller-del="${x.id}">Удалить</button></div></div>`).join(""):`<p class="fine">Имена ещё не добавлены.</p>`;el.sellerNamesList.querySelectorAll("[data-seller-save]").forEach(b=>b.onclick=async()=>{const id=b.dataset.sellerSave,name=el.sellerNamesList.querySelector(`[data-seller-name="${id}"]`).value.trim(),active=el.sellerNamesList.querySelector(`[data-seller-active="${id}"]`).checked;if(!name)return toast("Укажите имя продавца",true);const r=await supabase.from("seller_names").update({name,active}).eq("id",id);if(r.error)return toast(r.error.message,true);toast("Имя сохранено");await loadData();renderSellerNamesManager()});el.sellerNamesList.querySelectorAll("[data-seller-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Удалить имя? Старые заказы останутся."))return;const r=await supabase.from("seller_names").delete().eq("id",b.dataset.sellerDel);if(r.error)return toast(r.error.message,true);toast("Имя удалено");await loadData();renderSellerNamesManager()})}
+el.sellerNameForm.onsubmit=async e=>{e.preventDefault();const name=el.newSellerName.value.trim();if(!name)return;const maxSort=Math.max(0,...state.sellerNames.map(x=>x.sort_order||0));const r=await supabase.from("seller_names").insert({name,sort_order:maxSort+10,active:true});if(r.error)return toast(r.error.message,true);el.newSellerName.value="";toast("Продавец добавлен");await loadData();renderSellerNamesManager()};
+function renderCategoryManager(){el.categoryManager.innerHTML=state.categories.map(c=>`<div class="category-row"><span>${esc(c.name)} ${c.active?"":"(скрыта)"}</span><span class="actions"><button class="small-btn" data-cat-toggle="${c.id}">${c.active?"Скрыть":"Показать"}</button><button class="small-btn" data-cat-del="${c.id}">Удалить</button></span></div>`).join("");el.categoryManager.querySelectorAll("[data-cat-toggle]").forEach(b=>b.onclick=async()=>{const c=state.categories.find(x=>x.id===b.dataset.catToggle);const r=await supabase.from("categories").update({active:!c.active}).eq("id",c.id);if(r.error)toast(r.error.message,true);else{await loadData();renderCategoryManager()}});el.categoryManager.querySelectorAll("[data-cat-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Удалить категорию? У товаров категория станет пустой."))return;const r=await supabase.from("categories").delete().eq("id",b.dataset.catDel);if(r.error)toast(r.error.message,true);else{await loadData();renderCategoryManager()}})}
+el.categoryForm.onsubmit=async e=>{e.preventDefault();try{await addCategory(el.newCategoryName.value);el.newCategoryName.value="";toast("Категория добавлена");renderCategoryManager()}catch(e){toast(e.message||String(e),true)}};
+async function renderBannerManager(){el.bannerManager.innerHTML=state.banners.map(b=>`<div class="category-row"><span><b>${esc(b.title)}</b>${b.subtitle?` — ${esc(b.subtitle)}`:""}</span><span class="actions"><button class="small-btn" data-banner-toggle="${b.id}">${b.active?"Скрыть":"Показать"}</button><button class="small-btn danger-lite" data-banner-del="${b.id}">Удалить</button></span></div>`).join("");el.bannerManager.querySelectorAll("[data-banner-toggle]").forEach(b=>b.onclick=async()=>{const row=state.banners.find(x=>x.id===b.dataset.bannerToggle);const r=await supabase.from("site_banners").update({active:!row.active}).eq("id",row.id);if(r.error)return toast(r.error.message,true);await loadData();renderBannerManager()});el.bannerManager.querySelectorAll("[data-banner-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Удалить баннер?"))return;const r=await supabase.from("site_banners").delete().eq("id",b.dataset.bannerDel);if(r.error)return toast(r.error.message,true);await loadData();renderBannerManager()})}
+el.bannerForm.onsubmit=async e=>{e.preventDefault();const r=await supabase.from("site_banners").insert({title:el.bannerTitle.value.trim(),subtitle:el.bannerSubtitle.value.trim()||null,category_id:el.bannerCategory.value||null,sort_order:(state.banners.length+1)*10});if(r.error)return toast(r.error.message,true);el.bannerForm.reset();toast("Баннер добавлен");await loadData();renderBannerManager()};
 
-async function openManage(){
-  if(!isOwner())return;el.manageDialog.showModal();
-  await Promise.all([loadStaff(),renderCategoryManager(),renderSellerNamesManager()]);
-}
-async function loadStaff(){
-  const r=await supabase.from("staff_roles").select("*").order("email");if(r.error){toast(r.error.message,true);return}
-  state.staff=r.data||[];
-  el.staffList.innerHTML=state.staff.map(s=>`<div class="member"><span>${esc(s.email)}</span><span>${s.role==="admin"?"Администратор":"Продавец"}</span><span class="actions"><button class="small-btn" data-staff-del="${esc(s.email)}">Удалить</button></span></div>`).join("");
-  el.staffList.querySelectorAll("[data-staff-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Удалить доступ сотрудника?"))return;const r=await supabase.from("staff_roles").delete().eq("email",b.dataset.staffDel);if(r.error)toast(r.error.message,true);else{toast("Доступ удалён");loadStaff()}});
-}
-el.staffForm.onsubmit=async e=>{
-  e.preventDefault();const email=el.staffEmail.value.trim().toLowerCase(),role=el.staffRole.value;
-  const r=await supabase.from("staff_roles").upsert({email,role},{onConflict:"email"});if(r.error)return toast(r.error.message,true);
-  el.staffEmail.value="";toast("Доступ сохранён");loadStaff();
-};
-async function renderSellerNamesManager(){
-  if(!el.sellerNamesList)return;
-  const rows=state.sellerNames||[];
-  el.sellerNamesList.innerHTML=rows.length?rows.map(x=>`<div class="seller-name-row">
-    <input data-seller-name="${x.id}" value="${esc(x.name)}">
-    <label class="inline-check"><input type="checkbox" data-seller-active="${x.id}" ${x.active!==false?"checked":""}> Активен</label>
-    <div class="actions"><button class="small-btn" data-seller-save="${x.id}">Сохранить</button><button class="small-btn danger-lite" data-seller-del="${x.id}">Удалить</button></div>
-  </div>`).join(""):`<p class="fine">Имена ещё не добавлены.</p>`;
-  el.sellerNamesList.querySelectorAll("[data-seller-save]").forEach(b=>b.onclick=async()=>{
-    const id=b.dataset.sellerSave,name=el.sellerNamesList.querySelector(`[data-seller-name="${id}"]`).value.trim(),active=el.sellerNamesList.querySelector(`[data-seller-active="${id}"]`).checked;
-    if(!name)return toast("Укажите имя продавца",true);
-    const r=await supabase.from("seller_names").update({name,active}).eq("id",id);if(r.error)return toast(r.error.message,true);
-    toast("Имя продавца сохранено");await loadData();renderSellerNamesManager();
-  });
-  el.sellerNamesList.querySelectorAll("[data-seller-del]").forEach(b=>b.onclick=async()=>{
-    if(!confirm("Удалить имя продавца из списка? Старые заказы останутся в истории."))return;
-    const r=await supabase.from("seller_names").delete().eq("id",b.dataset.sellerDel);if(r.error)return toast(r.error.message,true);
-    toast("Имя удалено");await loadData();renderSellerNamesManager();
-  });
-}
+function renderLocalBadges(){el.favoritesBadge.textContent=state.favorites.length;el.favoritesBadge.classList.toggle("hidden",!state.favorites.length);const n=state.customerCart.reduce((a,x)=>a+x.qty,0);el.customerCartBadge.textContent=n;el.customerCartBadge.classList.toggle("hidden",!n)}
+function toggleFavorite(id){state.favorites=state.favorites.includes(id)?state.favorites.filter(x=>x!==id):[...state.favorites,id];saveLocal();renderLocalBadges();renderProducts();if(el.favoritesDialog.open)renderFavorites()}
+function renderFavorites(){const rows=state.favorites.map(id=>state.products.find(p=>p.id===id)).filter(Boolean);el.favoritesList.innerHTML=rows.length?rows.map(p=>productCard(p,true)).join(""):`<div class="empty compact-empty"><h2>Пока пусто</h2><p>Нажмите ♡ на нужных товарах.</p></div>`;bindProductCards(el.favoritesList)}
+function addCustomerCart(id){const p=state.products.find(x=>x.id===id);if(!p)return;const row=state.customerCart.find(x=>x.product_id===id);if(row)row.qty++;else state.customerCart.push({product_id:id,name:p.name,price:Number(p.price||0),qty:1});saveLocal();renderLocalBadges();toast("Добавлено в корзину")}
+function renderCustomerCart(){if(!state.customerCart.length){el.customerCartItems.innerHTML=`<div class="empty compact-empty"><h2>Корзина пуста</h2><p>Добавьте товары из каталога.</p></div>`;el.customerCartTotal.textContent="";el.sendCustomerCartBtn.disabled=true;return}el.sendCustomerCartBtn.disabled=false;el.customerCartItems.innerHTML=state.customerCart.map(x=>`<div class="cart-item"><div></div><div><b>${esc(x.name)}</b><div class="fine">${money(x.price)} × ${x.qty}</div></div><div class="qty"><button data-cminus="${x.product_id}">−</button><span>${x.qty}</span><button data-cplus="${x.product_id}">+</button></div><button class="small-btn" data-cremove="${x.product_id}">Удалить</button></div>`).join("");el.customerCartTotal.textContent=`Итого: ${money(state.customerCart.reduce((a,x)=>a+x.price*x.qty,0))}`;el.customerCartItems.querySelectorAll("[data-cminus]").forEach(b=>b.onclick=()=>changeCustomerQty(b.dataset.cminus,-1));el.customerCartItems.querySelectorAll("[data-cplus]").forEach(b=>b.onclick=()=>changeCustomerQty(b.dataset.cplus,1));el.customerCartItems.querySelectorAll("[data-cremove]").forEach(b=>b.onclick=()=>{state.customerCart=state.customerCart.filter(x=>x.product_id!==b.dataset.cremove);saveLocal();renderLocalBadges();renderCustomerCart()})}
+function changeCustomerQty(id,d){const r=state.customerCart.find(x=>x.product_id===id);if(!r)return;r.qty+=d;if(r.qty<=0)state.customerCart=state.customerCart.filter(x=>x.product_id!==id);saveLocal();renderLocalBadges();renderCustomerCart()}
+function sendCustomerCart(){const lines=state.customerCart.map((x,i)=>`${i+1}. ${x.name} — ${x.qty} шт. × ${money(x.price)}`);openWhatsapp(`Здравствуйте! Пришёл с сайта QUATT QURYLYS. Хочу уточнить/заказать:\n\n${lines.join("\n")}\n\nОриентировочная сумма: ${money(state.customerCart.reduce((a,x)=>a+x.price*x.qty,0))}`)}
 
-el.sellerNameForm.onsubmit=async e=>{
-  e.preventDefault();const name=el.newSellerName.value.trim();if(!name)return;
-  const maxSort=Math.max(0,...state.sellerNames.map(x=>x.sort_order||0));
-  const r=await supabase.from("seller_names").insert({name,sort_order:maxSort+10,active:true});
-  if(r.error)return toast(r.error.message,true);
-  el.newSellerName.value="";toast("Продавец добавлен");await loadData();renderSellerNamesManager();
-};
-
-function renderCategoryManager(){
-  el.categoryManager.innerHTML=state.categories.map(c=>`<div class="category-row"><span>${esc(c.name)} ${c.active?"":"(скрыта)"}</span><span class="actions"><button class="small-btn" data-cat-toggle="${c.id}">${c.active?"Скрыть":"Показать"}</button><button class="small-btn" data-cat-del="${c.id}">Удалить</button></span></div>`).join("");
-  el.categoryManager.querySelectorAll("[data-cat-toggle]").forEach(b=>b.onclick=async()=>{const c=state.categories.find(x=>x.id===b.dataset.catToggle);const r=await supabase.from("categories").update({active:!c.active}).eq("id",c.id);if(r.error)toast(r.error.message,true);else{await loadData();renderCategoryManager()}});
-  el.categoryManager.querySelectorAll("[data-cat-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Удалить категорию? У товаров категория станет пустой."))return;const r=await supabase.from("categories").delete().eq("id",b.dataset.catDel);if(r.error)toast(r.error.message,true);else{if(state.cat===b.dataset.catDel)state.cat="all";await loadData();renderCategoryManager()}});
-}
-el.categoryForm.onsubmit=async e=>{e.preventDefault();try{await addCategory(el.newCategoryName.value);el.newCategoryName.value="";toast("Категория добавлена");renderCategoryManager()}catch(err){toast(err.message||String(err),true)}};
-
-
-function requireSeller(){
-  if(!isSeller())return false;
-  if(!state.selectedSellerId){toast("Сначала выберите своё имя справа сверху",true);return false;}
-  return true;
-}
-function cartKey(){return `quatt-cart:${state.email||"guest"}:${state.selectedSellerId||"none"}`;}
-function loadCart(){
-  if(!isSeller()||!state.selectedSellerId){state.cart=[];renderCartBadge();return;}
-  try{state.cart=JSON.parse(localStorage.getItem(cartKey())||"[]");}catch{state.cart=[]}
-  renderCartBadge();
-}
-function saveCart(){if(isSeller()&&state.selectedSellerId)localStorage.setItem(cartKey(),JSON.stringify(state.cart));renderCartBadge();}
-function renderCartBadge(){
-  if(!el.cartBadge)return;
-  const n=state.cart.reduce((a,x)=>a+Number(x.qty||0),0);
-  el.cartBadge.textContent=n;el.cartBadge.classList.toggle("hidden",n===0);
-}
-function addToCart(productId){
-  if(!requireSeller())return;
-  const p=state.products.find(x=>x.id===productId);if(!p)return;
-  const row=state.cart.find(x=>x.product_id===productId);
-  if(row)row.qty+=1; else state.cart.push({product_id:p.id,name:p.name,price:Number(p.price||0),qty:1});
-  saveCart();
-}
-function changeQty(productId,delta){
-  const row=state.cart.find(x=>x.product_id===productId);if(!row)return;
-  row.qty+=delta;if(row.qty<=0)state.cart=state.cart.filter(x=>x.product_id!==productId);saveCart();renderCart();
-}
-function renderCart(){
-  const seller=selectedSeller();
-  if(!seller){el.cartItems.innerHTML='<div class="empty compact-empty"><h2>Выберите продавца</h2><p>Справа сверху выберите своё имя.</p></div>';el.cartTotal.textContent="";el.checkoutBtn.disabled=true;return;}
-  if(!state.cart.length){
-    el.cartItems.innerHTML=`<div class="empty compact-empty"><h2>Корзина ${esc(seller.name)} пуста</h2><p>Добавьте товар из карточки каталога.</p></div>`;
-    el.cartTotal.textContent="";el.checkoutBtn.disabled=true;return;
-  }
-  el.checkoutBtn.disabled=false;
-  el.cartItems.innerHTML=state.cart.map(x=>{
-    const im=imgsFor(x.product_id)[0];const cover=im?publicUrl(im.image_path):"";
-    return `<div class="cart-item">${cover?`<img src="${cover}" alt="">`:`<div></div>`}<div><b>${esc(x.name)}</b><div class="fine">${money(x.price)} × ${x.qty}</div></div><div class="qty"><button data-minus="${x.product_id}">−</button><span>${x.qty}</span><button data-plus="${x.product_id}">+</button></div><button class="small-btn" data-remove="${x.product_id}">Удалить</button></div>`;
-  }).join("");
-  const total=state.cart.reduce((a,x)=>a+Number(x.price)*Number(x.qty),0);
-  el.cartTotal.textContent=`Итого: ${money(total)}`;
-  el.cartItems.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>changeQty(b.dataset.minus,-1));
-  el.cartItems.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>changeQty(b.dataset.plus,1));
-  el.cartItems.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x.product_id!==b.dataset.remove);saveCart();renderCart()});
-}
-function resetCheckoutForm(){
-  el.checkoutForm.reset();el.clientName.value="";el.clientPhone.value="";el.orderNote.value="";el.initialStatus.value="interest";
-}
-async function addHistory(orderId,fromStatus,toStatus,actorName){
-  const r=await supabase.from("order_status_history").insert({order_id:orderId,from_status:fromStatus||null,to_status:toStatus,changed_by_email:state.email||null,changed_by_name:actorName||null});
-  if(r.error)console.warn("history",r.error);
-}
-async function createOrder(){
-  if(!state.cart.length||!requireSeller())return;
-  const seller=selectedSeller();
-  const total=state.cart.reduce((a,x)=>a+Number(x.price)*Number(x.qty),0);
-  const payload={seller_email:state.email,seller_name_id:seller.id,seller_name:seller.name,client_name:el.clientName.value.trim(),client_phone:el.clientPhone.value.trim()||null,note:el.orderNote.value.trim()||null,status:el.initialStatus.value,total_amount:total};
-  const r=await supabase.from("orders").insert(payload).select().single();if(r.error)throw r.error;
-  const items=state.cart.map(x=>({order_id:r.data.id,product_id:x.product_id,product_name:x.name,unit_price:x.price,quantity:x.qty,line_total:x.price*x.qty}));
-  const ri=await supabase.from("order_items").insert(items);if(ri.error)throw ri.error;
-  await addHistory(r.data.id,null,r.data.status,seller.name);
-  state.cart=[];saveCart();resetCheckoutForm();return r.data;
-}
-const statusLabel=s=>({interest:"Клиент интересуется",paid:"Оплачено",ordered:"Заказан у поставщика",arrived:"Прибыл",issued:"Выдан",cancelled:"Отменён"}[s]||s);
-const activeStatuses=new Set(["interest","paid","ordered","arrived"]);
-function orderInTab(o,tab){return tab==="active"?activeStatuses.has(o.status):tab==="completed"?o.status==="issued":o.status==="cancelled";}
-async function loadOrders(adminMode=false){
-  let q=supabase.from("orders").select("*,order_items(*),order_status_history(*)").order("created_at",{ascending:false});
-  if(!adminMode){
-    if(!requireSeller())return [];
-    q=q.eq("seller_email",state.email).eq("seller_name_id",state.selectedSellerId);
-  }
-  const r=await q;if(r.error)throw r.error;state.orders=r.data||[];return state.orders;
-}
-function historyHtml(o){
-  const rows=[...(o.order_status_history||[])].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
-  if(!rows.length)return '<p class="fine">История пока пустая.</p>';
-  return `<div class="status-history">${rows.map(h=>`<div><time>${new Date(h.created_at).toLocaleString("ru-RU")}</time><span>${h.from_status?`${statusLabel(h.from_status)} → `:""}<b>${statusLabel(h.to_status)}</b></span><em>${esc(h.changed_by_name||h.changed_by_email||"")}</em></div>`).join("")}</div>`;
-}
-async function changeOrderStatus(orderId,newStatus,actorName){
-  const order=state.orders.find(x=>x.id===orderId);if(!order)return;
-  const old=order.status;if(old===newStatus)return;
-  const r=await supabase.from("orders").update({status:newStatus}).eq("id",orderId);if(r.error)throw r.error;
-  await addHistory(orderId,old,newStatus,actorName);
-}
-async function deleteOrder(orderId,orderNumber){
-  if(!isAdmin())return;
-  if(!confirm(`Удалить заказ №${orderNumber}? Это действие нельзя отменить.`))return;
-  const r=await supabase.from("orders").delete().eq("id",orderId);if(r.error)return toast(r.error.message,true);
-  toast(`Заказ №${orderNumber} удалён`);await openOrders(true,false);await refreshOrdersBadge(false);
-}
-function renderOrders(list,adminMode){
-  const filtered=list.filter(o=>orderInTab(o,state.orderTab));
-  el.ordersList.innerHTML=filtered.length?filtered.map(o=>{
-    const readonlySeller=!adminMode&&o.status==="issued";
-    const paidClass=o.status==="paid"?" paid-order":"";
-    const sellerName=o.seller_name||"Продавец";
-    let actions="";
-    if(adminMode){
-      actions=`<select class="choice" data-order-status="${o.id}">${["interest","paid","ordered","arrived","issued","cancelled"].map(st=>`<option value="${st}" ${o.status===st?"selected":""}>${statusLabel(st)}</option>`).join("")}</select><button class="danger-lite small-btn" data-order-delete="${o.id}" data-order-number="${o.order_number}">Удалить заказ</button>`;
-    }else if(!readonlySeller){
-      if(o.status==="interest")actions+=`<button class="primary mini" data-seller-status="paid" data-order-id="${o.id}">Отметить оплачено</button>`;
-      if(o.status==="cancelled")actions+=`<button class="primary mini" data-seller-status="interest" data-order-id="${o.id}">Возобновить заказ</button>`;
-      else if(activeStatuses.has(o.status))actions+=`<button class="small-btn danger-lite" data-seller-status="cancelled" data-order-id="${o.id}">Отменить</button>`;
-    }
-    return `<div class="order-card${paidClass}"><div class="order-head"><div><strong>Заказ №${esc(o.order_number||"")}</strong><div class="order-meta">${new Date(o.created_at).toLocaleString("ru-RU")} · ${esc(sellerName)}</div></div><div class="order-total">${money(o.total_amount)}</div></div>${o.status==="paid"?'<div class="paid-banner">✓ ОПЛАЧЕНО — требуется обработка</div>':""}<p><b>Клиент:</b> ${esc(o.client_name||"")} ${esc(o.client_phone||"")}</p>${o.note?`<p>${esc(o.note)}</p>`:""}<div class="order-items">${(o.order_items||[]).map(i=>`${esc(i.product_name)} — ${i.quantity} × ${money(i.unit_price)} = ${money(i.line_total)}`).join("<br>")}</div><div class="order-actions">${actions||`<span class="status-pill">${statusLabel(o.status)}</span>`}<button class="small-btn" data-history-toggle="${o.id}">История статусов</button></div><div class="history-wrap hidden" data-history="${o.id}">${historyHtml(o)}</div></div>`;
-  }).join(""):`<div class="empty compact-empty"><h2>${state.orderTab==="active"?"Активных заказов нет":state.orderTab==="completed"?"Завершённых заказов нет":"Отменённых заказов нет"}</h2></div>`;
-  el.ordersList.querySelectorAll("[data-history-toggle]").forEach(b=>b.onclick=()=>el.ordersList.querySelector(`[data-history="${b.dataset.historyToggle}"]`).classList.toggle("hidden"));
-  if(adminMode){
-    el.ordersList.querySelectorAll("[data-order-status]").forEach(sel=>sel.onchange=async()=>{try{const order=state.orders.find(x=>x.id===sel.dataset.orderStatus);await changeOrderStatus(order.id,sel.value,"Администратор");toast("Статус заказа обновлён");await openOrders(true,false);await refreshOrdersBadge(false)}catch(e){toast(e.message||String(e),true)}});
-    el.ordersList.querySelectorAll("[data-order-delete]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.orderDelete,b.dataset.orderNumber));
-  }else{
-    el.ordersList.querySelectorAll("[data-seller-status]").forEach(b=>b.onclick=async()=>{try{const seller=selectedSeller();await changeOrderStatus(b.dataset.orderId,b.dataset.sellerStatus,seller?.name||"Продавец");toast(b.dataset.sellerStatus==="paid"?"Заказ отмечен как оплаченный":b.dataset.sellerStatus==="cancelled"?"Заказ отменён":"Заказ возобновлён");await openOrders(false,false)}catch(e){toast(e.message||String(e),true)}});
-  }
-}
-async function openOrders(adminMode,show=true){
-  try{
-    const rows=await loadOrders(adminMode);
-    el.ordersDialog.dataset.adminMode=adminMode?"1":"0";
-    el.ordersDialogTitle.textContent=adminMode?"Заказы":"Мои заказы";
-    el.ordersDialogSub.textContent=adminMode?"Все заказы продавцов.":`Заказы продавца: ${selectedSeller()?.name||"не выбран"}.`;
-    renderOrderTabs();renderOrders(rows,adminMode);if(show)el.ordersDialog.showModal();
-  }catch(e){toast(e.message||String(e),true)}
-}
-function renderOrderTabs(){
-  el.orderTabs.querySelectorAll("[data-order-tab]").forEach(b=>b.classList.toggle("active",b.dataset.orderTab===state.orderTab));
-}
+function requireSeller(){if(!isSeller())return false;if(!state.selectedSellerId){toast("Сначала выберите своё имя",true);return false}return true}
+function cartKey(){return `quatt-cart:${state.email||"guest"}:${state.selectedSellerId||"none"}`}
+function loadCart(){if(!isSeller()||!state.selectedSellerId){state.cart=[];renderCartBadge();return}try{state.cart=JSON.parse(localStorage.getItem(cartKey())||"[]")}catch{state.cart=[]}renderCartBadge()}
+function saveCart(){if(isSeller()&&state.selectedSellerId)localStorage.setItem(cartKey(),JSON.stringify(state.cart));renderCartBadge()}
+function renderCartBadge(){const n=state.cart.reduce((a,x)=>a+Number(x.qty||0),0);el.cartBadge.textContent=n;el.cartBadge.classList.toggle("hidden",n===0)}
+function addToCart(productId){if(!requireSeller())return;const p=state.products.find(x=>x.id===productId);if(!p)return;const row=state.cart.find(x=>x.product_id===productId);if(row)row.qty++;else state.cart.push({product_id:p.id,name:p.name,price:Number(p.price||0),qty:1});saveCart()}
+function changeQty(productId,delta){const row=state.cart.find(x=>x.product_id===productId);if(!row)return;row.qty+=delta;if(row.qty<=0)state.cart=state.cart.filter(x=>x.product_id!==productId);saveCart();renderCart()}
+function renderCart(){const seller=selectedSeller();if(!seller){el.cartItems.innerHTML='<div class="empty compact-empty"><h2>Выберите продавца</h2></div>';el.cartTotal.textContent="";el.checkoutBtn.disabled=true;return}if(!state.cart.length){el.cartItems.innerHTML=`<div class="empty compact-empty"><h2>Корзина ${esc(seller.name)} пуста</h2></div>`;el.cartTotal.textContent="";el.checkoutBtn.disabled=true;return}el.checkoutBtn.disabled=false;el.cartItems.innerHTML=state.cart.map(x=>{const cover=imgsFor(x.product_id)[0];return `<div class="cart-item">${cover?`<img src="${publicUrl(cover.image_path)}" alt="">`:`<div></div>`}<div><b>${esc(x.name)}</b><div class="fine">${money(x.price)} × ${x.qty}</div></div><div class="qty"><button data-minus="${x.product_id}">−</button><span>${x.qty}</span><button data-plus="${x.product_id}">+</button></div><button class="small-btn" data-remove="${x.product_id}">Удалить</button></div>`}).join("");el.cartTotal.textContent=`Итого: ${money(state.cart.reduce((a,x)=>a+Number(x.price)*Number(x.qty),0))}`;el.cartItems.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>changeQty(b.dataset.minus,-1));el.cartItems.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>changeQty(b.dataset.plus,1));el.cartItems.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>{state.cart=state.cart.filter(x=>x.product_id!==b.dataset.remove);saveCart();renderCart()})}
+function resetCheckoutForm(){el.checkoutForm.reset();el.initialStatus.value="interest"}
+async function addHistory(orderId,fromStatus,toStatus,actorName){const r=await supabase.from("order_status_history").insert({order_id:orderId,from_status:fromStatus,to_status:toStatus,changed_by_email:state.email,changed_by_name:actorName});if(r.error)throw r.error}
+async function createOrder(){if(!state.cart.length||!requireSeller())return;const seller=selectedSeller();const total=state.cart.reduce((a,x)=>a+Number(x.price)*Number(x.qty),0);const payload={seller_email:state.email,seller_name_id:seller.id,seller_name:seller.name,client_name:el.clientName.value.trim(),client_phone:el.clientPhone.value.trim()||null,note:el.orderNote.value.trim()||null,status:el.initialStatus.value,total_amount:total};const r=await supabase.from("orders").insert(payload).select().single();if(r.error)throw r.error;const items=state.cart.map(x=>({order_id:r.data.id,product_id:x.product_id,product_name:x.name,unit_price:x.price,quantity:x.qty,line_total:x.price*x.qty}));const ir=await supabase.from("order_items").insert(items);if(ir.error)throw ir.error;await addHistory(r.data.id,null,r.data.status,seller.name);state.cart=[];saveCart();resetCheckoutForm();return r.data}
+const activeStatuses=new Set(["interest","paid","ordered","arrived"]);const statusLabels={interest:"Интересуется",paid:"Оплачено",ordered:"Заказан у поставщика",arrived:"Прибыл",issued:"Выдан",cancelled:"Отменён"};function statusLabel(s){return statusLabels[s]||s}function orderInTab(o,tab){return tab==="active"?activeStatuses.has(o.status):tab==="completed"?o.status==="issued":o.status==="cancelled"}
+async function loadOrders(adminMode=false){let q=supabase.from("orders").select("*,order_items(*),order_status_history(*)").order("created_at",{ascending:false});if(!adminMode){if(!requireSeller())return[];q=q.eq("seller_email",state.email).eq("seller_name_id",state.selectedSellerId)}const r=await q;if(r.error)throw r.error;state.orders=r.data||[];return state.orders}
+function historyHtml(o){const rows=[...(o.order_status_history||[])].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));return rows.length?`<div class="status-history">${rows.map(h=>`<div><time>${new Date(h.created_at).toLocaleString("ru-RU")}</time><span>${h.from_status?esc(statusLabel(h.from_status))+" → ":""}<b>${esc(statusLabel(h.to_status))}</b></span><em>${esc(h.changed_by_name||h.changed_by_email||"")}</em></div>`).join("")}</div>`:`<p class="fine">Истории пока нет.</p>`}
+async function changeOrderStatus(orderId,newStatus,actorName){const order=state.orders.find(x=>x.id===orderId);if(!order)return;const from=order.status;const r=await supabase.from("orders").update({status:newStatus}).eq("id",orderId);if(r.error)throw r.error;await addHistory(orderId,from,newStatus,actorName)}
+async function deleteOrder(orderId,orderNumber){if(!isAdmin()||!confirm(`Удалить заказ №${orderNumber}? Это действие нельзя отменить.`))return;const r=await supabase.from("orders").delete().eq("id",orderId);if(r.error)return toast(r.error.message,true);toast("Заказ удалён");await openOrders(true,false);refreshOrdersBadge(false)}
+function renderOrders(list,adminMode){const filtered=list.filter(o=>orderInTab(o,state.orderTab));el.ordersList.innerHTML=filtered.length?filtered.map(o=>{const paidClass=o.status==="paid"?" paid-order":"";let actions="";if(adminMode&&state.orderTab!=="completed"){actions+=`<select class="choice order-status" data-order-status="${o.id}">${Object.entries(statusLabels).map(([v,l])=>`<option value="${v}" ${o.status===v?"selected":""}>${l}</option>`).join("")}</select><button class="small-btn danger-lite" data-order-delete="${o.id}" data-order-number="${o.order_number}">Удалить заказ</button>`}else if(!adminMode){if(o.status==="interest")actions+=`<button class="primary mini" data-seller-status="paid" data-order-id="${o.id}">Отметить оплачено</button>`;if(o.status==="cancelled")actions+=`<button class="primary mini" data-seller-status="interest" data-order-id="${o.id}">Возобновить заказ</button>`;else if(activeStatuses.has(o.status))actions+=`<button class="small-btn danger-lite" data-seller-status="cancelled" data-order-id="${o.id}">Отменить</button>`}return `<div class="order-card${paidClass}"><div class="order-head"><div><strong>Заказ №${esc(o.order_number||"")}</strong><div class="order-meta">${new Date(o.created_at).toLocaleString("ru-RU")} · ${esc(o.seller_name||"Продавец")}</div></div><div class="order-total">${money(o.total_amount)}</div></div>${o.status==="paid"?'<div class="paid-banner">✓ ОПЛАЧЕНО — требуется обработка</div>':""}<p><b>Клиент:</b> ${esc(o.client_name||"")} ${esc(o.client_phone||"")}</p>${o.note?`<p>${esc(o.note)}</p>`:""}<div class="order-items">${(o.order_items||[]).map(i=>`${esc(i.product_name)} — ${i.quantity} × ${money(i.unit_price)} = ${money(i.line_total)}`).join("<br>")}</div><div class="order-actions">${actions||`<span class="status-pill">${statusLabel(o.status)}</span>`}<button class="small-btn" data-history-toggle="${o.id}">История статусов</button></div><div class="history-wrap hidden" data-history="${o.id}">${historyHtml(o)}</div></div>`}).join(""):`<div class="empty compact-empty"><h2>Здесь пока пусто</h2></div>`;el.ordersList.querySelectorAll("[data-history-toggle]").forEach(b=>b.onclick=()=>el.ordersList.querySelector(`[data-history="${b.dataset.historyToggle}"]`).classList.toggle("hidden"));if(adminMode){el.ordersList.querySelectorAll("[data-order-status]").forEach(s=>s.onchange=async()=>{try{await changeOrderStatus(s.dataset.orderStatus,s.value,"Администратор");toast("Статус обновлён");await openOrders(true,false);await refreshOrdersBadge(false)}catch(e){toast(e.message||String(e),true)}});el.ordersList.querySelectorAll("[data-order-delete]").forEach(b=>b.onclick=()=>deleteOrder(b.dataset.orderDelete,b.dataset.orderNumber))}else el.ordersList.querySelectorAll("[data-seller-status]").forEach(b=>b.onclick=async()=>{try{const seller=selectedSeller();await changeOrderStatus(b.dataset.orderId,b.dataset.sellerStatus,seller?.name||"Продавец");toast(b.dataset.sellerStatus==="paid"?"Заказ отмечен как оплаченный":b.dataset.sellerStatus==="cancelled"?"Заказ отменён":"Заказ возобновлён");await openOrders(false,false)}catch(e){toast(e.message||String(e),true)}})}
+async function openOrders(adminMode,show=true){try{const rows=await loadOrders(adminMode);el.ordersDialog.dataset.adminMode=adminMode?"1":"0";el.ordersDialogTitle.textContent=adminMode?"Заказы":"Мои заказы";el.ordersDialogSub.textContent=adminMode?"Все заказы продавцов.":`Заказы продавца: ${selectedSeller()?.name||"не выбран"}.`;renderOrderTabs();renderOrders(rows,adminMode);if(show)el.ordersDialog.showModal()}catch(e){toast(e.message||String(e),true)}}
+function renderOrderTabs(){el.orderTabs.querySelectorAll("[data-order-tab]").forEach(b=>b.classList.toggle("active",b.dataset.orderTab===state.orderTab))}
 el.orderTabs.querySelectorAll("[data-order-tab]").forEach(b=>b.onclick=()=>{state.orderTab=b.dataset.orderTab;renderOrderTabs();renderOrders(state.orders,el.ordersDialog.dataset.adminMode==="1")});
-async function refreshOrdersBadge(notify=true){
-  if(!isAdmin()){el.ordersBadge.classList.add("hidden");return;}
-  const r=await supabase.from("orders").select("id,status,order_number,seller_name");if(r.error)return;
-  const paid=(r.data||[]).filter(o=>o.status==="paid");
-  el.ordersBadge.textContent=paid.length;el.ordersBadge.classList.toggle("hidden",paid.length===0);
-  const key=`quatt-paid-seen:${state.email}`;let seen=[];try{seen=JSON.parse(localStorage.getItem(key)||"[]")}catch{}
-  const known=new Set(seen),fresh=paid.filter(o=>!known.has(o.id));
-  if(state.paidSeenReady&&notify)fresh.slice(0,3).forEach(o=>toast(`Оплачен заказ №${o.order_number}${o.seller_name?" · "+o.seller_name:""}`));
-  localStorage.setItem(key,JSON.stringify([...new Set([...seen,...paid.map(o=>o.id)])].slice(-300)));
-  state.paidSeenReady=true;
-}
+async function refreshOrdersBadge(notify=true){if(!isAdmin()){el.ordersBadge.classList.add("hidden");return}const r=await supabase.from("orders").select("id,status,order_number,seller_name");if(r.error)return;const paid=(r.data||[]).filter(o=>o.status==="paid");el.ordersBadge.textContent=paid.length;el.ordersBadge.classList.toggle("hidden",paid.length===0);const seen=new Set(JSON.parse(localStorage.getItem("quatt-paid-seen")||"[]"));const fresh=paid.filter(o=>!seen.has(o.id));if(state.paidSeenReady&&notify)fresh.slice(0,3).forEach(o=>toast(`Оплачен заказ №${o.order_number}${o.seller_name?" · "+o.seller_name:""}`));paid.forEach(o=>seen.add(o.id));localStorage.setItem("quatt-paid-seen",JSON.stringify([...seen].slice(-300)));state.paidSeenReady=true}
 
-el.loginBtn.onclick=()=>el.loginDialog.showModal();
-el.loginForm.onsubmit=async e=>{
-  e.preventDefault();el.loginError.textContent="";
-  const r=await supabase.auth.signInWithPassword({email:el.loginEmail.value.trim(),password:el.loginPassword.value});
-  if(r.error){el.loginError.textContent=r.error.message;return}
-  state.session=r.data.session;await loadRole();el.loginDialog.close();await loadData();
-};
-el.logoutBtn.onclick=async()=>{await supabase.auth.signOut();state.session=null;state.role="guest";state.customerMode=false;state.selectedSellerId=null;state.cart=[];await loadData()};
-el.customerModeBtn.onclick=()=>{state.customerMode=!state.customerMode;render()};
-el.addProductBtn.onclick=()=>openProduct();
-el.mobileAddProductBtn.onclick=()=>openProduct();
-el.manageBtn.onclick=openManage;el.manageBtnDesktop.onclick=openManage;
-el.sellerPicker.onchange=()=>{state.selectedSellerId=el.sellerPicker.value||null;if(state.selectedSellerId)localStorage.setItem(sellerSelectionKey(),state.selectedSellerId);loadCart();renderAuth();};
-el.cartBtn.onclick=()=>{if(!requireSeller())return;renderCart();el.cartDialog.showModal()};
-el.checkoutBtn.onclick=()=>{if(!state.cart.length||!requireSeller())return;resetCheckoutForm();el.cartDialog.close();el.checkoutDialog.showModal()};
-el.checkoutForm.onsubmit=async e=>{e.preventDefault();try{const o=await createOrder();el.checkoutDialog.close();toast(`Заказ №${o.order_number} создан`);await refreshOrdersBadge()}catch(err){toast(err.message||String(err),true)}};
-el.ordersBtn.onclick=()=>{state.orderTab="active";openOrders(true)};
-el.myOrdersBtn.onclick=()=>{if(!requireSeller())return;state.orderTab="active";openOrders(false)};
+let searchTimer;function maybeLogSearch(){clearTimeout(searchTimer);searchTimer=setTimeout(()=>{const term=state.q.trim();if(term.length>=2)supabase.from("catalog_search_events").insert({term:term.slice(0,120)}).then(()=>{})},900)}
+function renderSearchSuggestions(){const q=norm(state.q);if(q.length<1){el.searchSuggestions.classList.add("hidden");return}const rows=state.products.filter(p=>norm(`${p.name} ${p.brand||""}`).includes(q)).slice(0,7);el.searchSuggestions.classList.toggle("hidden",!rows.length);el.searchSuggestions.innerHTML=rows.map(p=>`<button data-suggest-product="${p.id}"><b>${esc(p.name)}</b>${p.brand?`<span>${esc(p.brand)}</span>`:""}</button>`).join("");el.searchSuggestions.querySelectorAll("[data-suggest-product]").forEach(b=>b.onclick=()=>{el.searchSuggestions.classList.add("hidden");openDetail(b.dataset.suggestProduct)})}
 
-el.searchInput.oninput=()=>{state.q=el.searchInput.value;renderFilters();renderProducts()};
-el.clearSearchBtn.onclick=()=>{state.q="";renderFilters();renderProducts()};
-el.mobileCategory.onchange=()=>{state.cat=el.mobileCategory.value;render()};
-el.brandFilter.onchange=()=>{state.brand=el.brandFilter.value;renderProducts()};
-el.maxPrice.oninput=()=>{state.max=el.maxPrice.value;renderProducts()};
-el.sortFilter.onchange=()=>{state.sort=el.sortFilter.value;renderProducts()};
+async function openDashboard(){if(!isAdmin())return;el.dashboardDialog.showModal();el.dashboardContent.innerHTML="Загрузка…";try{const since=new Date(Date.now()-30*864e5).toISOString();const [views,searches,orders]=await Promise.all([supabase.from("product_view_events").select("product_id,viewed_at").gte("viewed_at",since),supabase.from("catalog_search_events").select("term,searched_at").gte("searched_at",since),supabase.from("orders").select("id,status,total_amount,created_at").gte("created_at",since)]);if(views.error)throw views.error;if(searches.error)throw searches.error;if(orders.error)throw orders.error;const vc={};(views.data||[]).forEach(v=>vc[v.product_id]=(vc[v.product_id]||0)+1);state.viewCounts=vc;const topViews=Object.entries(vc).sort((a,b)=>b[1]-a[1]).slice(0,10);const sc={};(searches.data||[]).forEach(s=>{const k=norm(s.term);if(k)sc[k]=(sc[k]||0)+1});const topSearch=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,10);const os=orders.data||[];el.dashboardContent.innerHTML=`<div class="dash-stats"><div><span>Товаров</span><strong>${state.products.length}</strong></div><div><span>Активных</span><strong>${state.products.filter(p=>p.active!==false).length}</strong></div><div><span>Заказов 30 дней</span><strong>${os.length}</strong></div><div><span>Оплачено</span><strong>${os.filter(o=>o.status==="paid").length}</strong></div><div><span>Завершено</span><strong>${os.filter(o=>o.status==="issued").length}</strong></div><div><span>Отменено</span><strong>${os.filter(o=>o.status==="cancelled").length}</strong></div></div><div class="dash-cols"><section><h3>Топ товаров по просмотрам</h3>${topViews.length?topViews.map(([id,n],i)=>`<div class="rank"><span>${i+1}. ${esc(state.products.find(p=>p.id===id)?.name||"Удалённый товар")}</span><b>${n}</b></div>`).join(""):'<p class="fine">Пока мало данных.</p>'}</section><section><h3>Что ищут клиенты</h3>${topSearch.length?topSearch.map(([q,n],i)=>`<div class="rank"><span>${i+1}. ${esc(q)}</span><b>${n}</b></div>`).join(""):'<p class="fine">Пока мало данных.</p>'}</section></div>`;renderProducts()}catch(e){el.dashboardContent.innerHTML=`<p class="error-text">${esc(e.message||e)}</p>`}}
+function openBulk(){if(!priv())return;el.bulkProducts.innerHTML=state.products.map(p=>`<label class="bulk-row"><input type="checkbox" value="${p.id}"><span>${esc(p.name)}</span><small>${esc(catName(p.category_id))}</small><b>${money(p.price)}</b></label>`).join("");el.bulkDialog.showModal()}
+el.bulkSelectAll.onclick=()=>{const boxes=[...el.bulkProducts.querySelectorAll('input[type="checkbox"]')];const all=boxes.every(x=>x.checked);boxes.forEach(x=>x.checked=!all)};
+el.applyBulkBtn.onclick=async()=>{const ids=[...el.bulkProducts.querySelectorAll('input:checked')].map(x=>x.value);if(!ids.length)return toast("Выберите товары",true);if(!confirm(`Изменить ${ids.length} товар(ов)?`))return;try{for(const id of ids){const p=state.products.find(x=>x.id===id),patch={};if(el.bulkCategory.value)patch.category_id=el.bulkCategory.value;if(el.bulkVisibility.value)patch.active=el.bulkVisibility.value==="true";if(el.bulkMarkup.value!==""){const n=Number(el.bulkMarkup.value);patch.markup=n;patch.price=roundRetail(Number(p.cost||0)*(1+n/100))}if(!Object.keys(patch).length)continue;const r=await supabase.from("products").update(patch).eq("id",id);if(r.error)throw r.error}toast("Массовое изменение готово");el.bulkDialog.close();await loadData()}catch(e){toast(e.message||String(e),true)}};
 
-async function init(){
-  const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();renderAuth();await loadData();await refreshOrdersBadge(false);
-  supabase.auth.onAuthStateChange(async(_event,session)=>{state.session=session;await loadRole();await loadData();await refreshOrdersBadge(false)});
-  setInterval(()=>{if(isAdmin())refreshOrdersBadge(true)},20000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
-}
+function excelRows(){return state.products.map(p=>({Название:p.name,Категория:catName(p.category_id),Бренд:p.brand||"",Цена:Number(p.price||0),Закуп:Number(p.cost||0),Наценка:Number(p.markup||0),Наличие:availabilityLabel(p.availability||"order"),Характеристики:p.specs||"",Поставщик:p.supplier||"",Адрес_поставщика:p.supplier_address||"",Контакт_поставщика:p.supplier_contact||"",Дата_проверки:p.checked_date||"",Фото:imgsFor(p.id).map(i=>publicUrl(i.image_path)).join("; ")}))}
+function downloadWorkbook(rows,name,sheet="Товары"){if(!window.XLSX)return toast("Модуль Excel ещё загружается. Повтори через секунду.",true);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),sheet);XLSX.writeFile(wb,name)}
+el.exportExcelBtn.onclick=()=>downloadWorkbook(excelRows(),`QUATT_catalog_${new Date().toISOString().slice(0,10)}.xlsx`);
+el.exportSatuBtn.onclick=()=>{const rows=state.products.filter(p=>p.active!==false).map(p=>({Название_позиции:p.name,Название_группы:catName(p.category_id),Бренд:p.brand||"",Цена:Number(p.price||0),Валюта:"KZT",Единица_измерения:"шт.",Наличие:p.availability==="in_stock"?"+":p.availability==="out_of_stock"?"-":"под заказ",Описание:p.specs||"",Ссылка_изображения:imgsFor(p.id).map(i=>publicUrl(i.image_path)).join(", ")}));downloadWorkbook(rows,`QUATT_SATU_PREP_${new Date().toISOString().slice(0,10)}.xlsx`,"Satu")};
+function rowVal(row,names){for(const [k,v] of Object.entries(row)){if(names.some(n=>norm(k)===norm(n)))return v}return ""}
+el.excelImport.onchange=async()=>{const file=el.excelImport.files?.[0];el.excelImport.value="";if(!file)return;if(!window.XLSX)return toast("Модуль Excel ещё загружается",true);if(!confirm("Импортировать товары из файла?"))return;try{const data=await file.arrayBuffer();const wb=XLSX.read(data);const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});let added=0,skipped=0;for(const row of rows){const name=String(rowVal(row,["Название","Наименование","Название товара","name"])).trim();if(!name){skipped++;continue}const brand=String(rowVal(row,["Бренд","brand"])).trim();if(findDuplicate(name,brand,"")){skipped++;continue}const catText=String(rowVal(row,["Категория","Группа","category"])).trim();let cat=state.categories.find(c=>norm(c.name)===norm(catText));if(catText&&!cat)cat=await addCategory(catText);const price=Number(rowVal(row,["Цена","Розничная цена","price"]))||0,cost=Number(rowVal(row,["Закуп","Закупочная цена","cost"]))||0,specs=String(rowVal(row,["Характеристики","Описание","specs"])).trim();const payload={name,brand:brand||null,category_id:cat?.id||null,price,cost,markup:cost?((price/cost)-1)*100:0,specs:specs||null,delivery:"1 день",active:true,availability:"order",price_mode:"show",keywords:uniq([name,brand,catText,...Object.values(parseSpecs(specs))].join(" ").split(/\s+/)).join(", "),supplier:String(rowVal(row,["Поставщик","supplier"])).trim()||null};const r=await supabase.from("products").insert(payload);if(r.error)throw r.error;added++}toast(`Импорт: добавлено ${added}, пропущено ${skipped}`);await loadData()}catch(e){toast(e.message||String(e),true)}};
 
+el.searchInput.oninput=()=>{state.q=el.searchInput.value;el.clearSearchBtn.classList.toggle("hidden",!state.q);renderSearchSuggestions();renderProducts();maybeLogSearch()};el.clearSearchBtn.onclick=()=>{el.searchInput.value="";state.q="";el.clearSearchBtn.classList.add("hidden");el.searchSuggestions.classList.add("hidden");renderProducts()};el.brandFilter.onchange=()=>{state.brand=el.brandFilter.value;renderProducts()};el.availabilityFilter.onchange=()=>{state.availability=el.availabilityFilter.value;renderProducts()};el.maxPrice.oninput=()=>{state.max=el.maxPrice.value;renderProducts()};el.sortFilter.onchange=()=>{state.sort=el.sortFilter.value;renderProducts()};el.mobileCategory.onchange=()=>setCat(el.mobileCategory.value);
+el.loginBtn.onclick=()=>el.loginDialog.showModal();el.loginForm.onsubmit=async e=>{e.preventDefault();el.loginError.textContent="";const {data,error}=await supabase.auth.signInWithPassword({email:el.loginEmail.value.trim(),password:el.loginPassword.value});if(error){el.loginError.textContent=error.message;return}state.session=data.session;el.loginDialog.close();await loadRole();await loadData();refreshOrdersBadge(false)};el.logoutBtn.onclick=async()=>{await supabase.auth.signOut();state.session=null;state.role="guest";state.customerMode=false;state.selectedSellerId=null;state.cart=[];await loadData()};
+el.customerModeBtn.onclick=()=>{state.customerMode=!state.customerMode;render()};el.addProductBtn.onclick=()=>openProduct();el.mobileAddProductBtn.onclick=()=>openProduct();el.manageBtn.onclick=openManage;el.manageBtnDesktop.onclick=openManage;el.sellerPicker.onchange=()=>{state.selectedSellerId=el.sellerPicker.value||null;if(state.selectedSellerId)localStorage.setItem(sellerSelectionKey(),state.selectedSellerId);loadCart();renderAuth()};el.cartBtn.onclick=()=>{if(!requireSeller())return;renderCart();el.cartDialog.showModal()};el.checkoutBtn.onclick=()=>{if(!state.cart.length||!requireSeller())return;resetCheckoutForm();el.cartDialog.close();el.checkoutDialog.showModal()};el.checkoutForm.onsubmit=async e=>{e.preventDefault();try{const o=await createOrder();if(o){el.checkoutDialog.close();toast(`Заказ №${o.order_number} создан`);resetCheckoutForm()}}catch(e){toast(e.message||String(e),true)}};el.ordersBtn.onclick=()=>{state.orderTab="active";openOrders(true)};el.myOrdersBtn.onclick=()=>{state.orderTab="active";openOrders(false)};
+el.favoritesBtn.onclick=()=>{renderFavorites();el.favoritesDialog.showModal()};el.customerCartBtn.onclick=()=>{renderCustomerCart();el.customerCartDialog.showModal()};el.sendCustomerCartBtn.onclick=sendCustomerCart;el.contactsBtn.onclick=()=>el.contactsDialog.showModal();el.contactWhatsappBtn.onclick=()=>openWhatsapp();el.footerWhatsappBtn.onclick=()=>openWhatsapp();el.helpWhatsappBtn.onclick=()=>openWhatsapp("Здравствуйте! Пришёл с сайта QUATT QURYLYS. Не нашёл нужный товар. Помогите подобрать / заказать.");el.notFoundBtn.onclick=()=>el.helpWhatsappBtn.click();el.recentBtn.onclick=()=>{el.recentSection.classList.remove("hidden");el.recentSection.scrollIntoView({behavior:"smooth"})};el.clearRecentBtn.onclick=()=>{state.recent=[];saveLocal();renderRecent()};el.dashboardBtn.onclick=openDashboard;el.bulkBtn.onclick=openBulk;
+
+async function init(){loadLocal();const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();await loadData();renderLocalBadges();if(isAdmin()){refreshOrdersBadge(false);setInterval(()=>refreshOrdersBadge(true),30000)}if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=24").catch(()=>{})}
 init();

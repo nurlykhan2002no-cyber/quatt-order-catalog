@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://quatt-order-catalog.pages.dev/sitemap.xml

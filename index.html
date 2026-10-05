@@ -3,28 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#171717">
-  <meta name="description" content="QUATT QURYLYS — каталог товаров под заказ">
-  <title>QUATT — Каталог под заказ</title>
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="QUATT QURYLYS — строительный каталог товаров в Атырау. Сантехника, электрика, краски, крепёж и инструмент.">
+  <meta property="og:title" content="QUATT QURYLYS — каталог товаров">
+  <meta property="og:description" content="Строительные товары QUATT QURYLYS · Нұрсая 17 · Атырау · 09:00–21:00">
+  <meta property="og:type" content="website">
+  <title>QUATT QURYLYS — Каталог товаров</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 </head>
 <body>
   <div id="toastHost" class="toast-host"></div>
 
   <header>
-    <div class="logo-wrap"><img class="logo-gif" src="./quatt.gif" alt="QUATT QURYLYS"></div>
+    <a class="logo-wrap" href="./" aria-label="QUATT QURYLYS"><img class="logo-gif" src="./quatt.gif?v=24" alt="QUATT QURYLYS"></a>
     <div class="header-divider"></div>
-    <span class="header-title">Каталог под заказ</span>
+    <span class="header-title">Каталог товаров</span>
     <div class="header-right">
-      <label id="sellerPickerWrap" class="seller-picker hidden">Продавец
-        <select id="sellerPicker"></select>
-      </label>
+      <button id="contactsBtn" class="client contact-top">☎ Контакты</button>
+      <button id="favoritesBtn" class="client">♡ Избранное <span id="favoritesBadge" class="badge hidden">0</span></button>
+      <button id="customerCartBtn" class="client">Корзина <span id="customerCartBadge" class="badge hidden">0</span></button>
+      <label id="sellerPickerWrap" class="seller-picker hidden">Продавец <select id="sellerPicker"></select></label>
       <button id="ordersBtn" class="client hidden">Заказы <span id="ordersBadge" class="badge hidden">0</span></button>
       <button id="myOrdersBtn" class="client hidden">Мои заказы</button>
-      <button id="cartBtn" class="client hidden">Корзина <span id="cartBadge" class="badge hidden">0</span></button>
-      <button id="manageBtn" class="mobile-manage hidden" aria-label="Доступ и категории">⚙</button>
+      <button id="cartBtn" class="client hidden">Корзина продавца <span id="cartBadge" class="badge hidden">0</span></button>
+      <button id="dashboardBtn" class="client hidden">Дашборд</button>
+      <button id="bulkBtn" class="client hidden">Массово</button>
+      <button id="manageBtn" class="mobile-manage hidden" aria-label="Управление">⚙</button>
       <button id="customerModeBtn" class="client hidden">◉ Режим клиента</button>
       <button id="loginBtn" class="client">Войти</button>
       <button id="logoutBtn" class="link-btn hidden">Выйти</button>
@@ -35,232 +42,161 @@
     <aside>
       <div class="nav-caption">КАТЕГОРИИ</div>
       <div id="desktopCategories"></div>
+      <div class="side-tools">
+        <button id="recentBtn" class="nav subtle">Недавно смотрели</button>
+        <button id="notFoundBtn" class="nav subtle">Не нашли товар?</button>
+      </div>
       <div id="sideBottom" class="side-bottom hidden">
-        <button id="manageBtnDesktop" class="nav">⚙ Доступ и категории</button>
+        <button id="manageBtnDesktop" class="nav">⚙ Управление</button>
         <p>✓ Закрытая информация защищена</p>
       </div>
     </aside>
 
     <main>
+      <section id="bannerStrip" class="banner-strip hidden"></section>
+
       <div class="title-row">
         <div>
-          <div class="eyebrow">QUATT / ПОД ЗАКАЗ</div>
-          <h1 id="pageTitle">Выберите то, что подходит</h1>
-          <p class="intro">Каталог товаров под заказ · Розничные цены · Актуальное наличие</p>
+          <div class="eyebrow">QUATT / АТЫРАУ</div>
+          <h1 id="pageTitle">Всё для ремонта и строительства</h1>
+          <p class="intro">Каталог товаров · Розничные цены · Наличие и поставка уточняются перед покупкой</p>
         </div>
         <button id="addProductBtn" class="primary hidden">＋ Добавить товар</button>
       </div>
 
-      <div class="search">
-        <span class="search-icon">⌕</span>
-        <input id="searchInput" aria-label="Поиск товара" placeholder="Название, бренд, артикул или характеристика">
-        <button id="clearSearchBtn" class="link-btn hidden">Очистить</button>
+      <div class="search-wrap">
+        <div class="search">
+          <span class="search-icon">⌕</span>
+          <input id="searchInput" aria-label="Поиск товара" autocomplete="off" placeholder="Название, бренд или характеристика">
+          <button id="clearSearchBtn" class="link-btn hidden">Очистить</button>
+        </div>
+        <div id="searchSuggestions" class="search-suggestions hidden"></div>
       </div>
 
-      <div class="mobile-cats">
-        <select id="mobileCategory" class="choice"></select>
-      </div>
+      <div class="mobile-cats"><select id="mobileCategory" class="choice"></select></div>
 
       <div class="filters">
         <span class="filter-icon">☰</span>
         <select id="brandFilter" class="choice"></select>
-        <label class="price-filter">До
-          <input id="maxPrice" type="number" min="0" placeholder="любая цена"> ₸
-        </label>
+        <select id="availabilityFilter" class="choice">
+          <option value="all">Любое наличие</option>
+          <option value="in_stock">В наличии</option>
+          <option value="order">Под заказ</option>
+          <option value="out_of_stock">Нет в наличии</option>
+        </select>
+        <label class="price-filter">До <input id="maxPrice" type="number" min="0" placeholder="любая цена"> ₸</label>
         <select id="sortFilter" class="choice">
           <option>Сначала новые</option>
           <option>Цена: по возрастанию</option>
           <option>Цена: по убыванию</option>
+          <option>Популярные</option>
         </select>
       </div>
+      <div id="dynamicFilters" class="dynamic-filters"></div>
 
-      <div class="result-line">
-        <span id="resultCount">0 товаров</span>
-        <span>◷ Наличие и срок уточняем перед покупкой</span>
-      </div>
+      <div class="result-line"><span id="resultCount">0 товаров</span><span>◷ Наличие и срок уточняем перед покупкой</span></div>
 
       <section id="stateBox" class="empty">Загружаем каталог…</section>
       <section id="catalogGrid" class="catalog-grid hidden"></section>
+      <section id="recentSection" class="home-section hidden"><div class="section-head"><h2>Недавно смотрели</h2><button class="small-btn" id="clearRecentBtn">Очистить</button></div><div id="recentGrid" class="mini-grid"></div></section>
 
-      <footer>QUATT QURYLYS<span>Нұрсая 17, Атырау · 09:00–21:00</span></footer>
+      <section class="help-strip">
+        <div><strong>Не нашли нужный товар?</strong><span>Напишите нам — попробуем найти и привезти под заказ.</span></div>
+        <button id="helpWhatsappBtn" class="whatsapp-btn">WhatsApp</button>
+      </section>
+
+      <footer>
+        <div><strong>QUATT QURYLYS</strong><span>Нұрсая 17, Атырау · 09:00–21:00</span></div>
+        <div class="footer-contacts"><a href="tel:+77076154747">+7 707 615 4747</a><button id="footerWhatsappBtn" class="whatsapp-link">WhatsApp</button></div>
+      </footer>
     </main>
   </div>
 
   <button id="mobileAddProductBtn" class="fab hidden">＋</button>
 
-  <dialog id="loginDialog">
-    <form id="loginForm" class="modal-card small">
-      <div class="modal-head">
-        <div><h2>Вход</h2><p>Администратор / сотрудник</p></div>
-        <button type="button" class="close" data-close="loginDialog">×</button>
-      </div>
-      <label>Email<input id="loginEmail" type="email" autocomplete="username" required></label>
-      <label>Пароль<input id="loginPassword" type="password" autocomplete="current-password" required></label>
-      <div id="loginError" class="error-text"></div>
-      <button class="primary full-btn" type="submit">Войти</button>
-    </form>
-  </dialog>
+  <dialog id="loginDialog"><form id="loginForm" class="modal-card small">
+    <div class="modal-head"><div><h2>Вход</h2><p>Администратор / сотрудник</p></div><button type="button" class="close" data-close="loginDialog">×</button></div>
+    <label>Email<input id="loginEmail" type="email" autocomplete="username" required></label>
+    <label>Пароль<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+    <div id="loginError" class="error-text"></div><button class="primary full-btn" type="submit">Войти</button>
+  </form></dialog>
 
-  <dialog id="detailDialog">
-    <div class="modal-card detail-modal">
-      <div class="modal-head">
-        <div><h2 id="detailTitle"></h2><p>Товар под заказ</p></div>
-        <button type="button" class="close" data-close="detailDialog">×</button>
-      </div>
-      <div id="detailContent"></div>
+  <dialog id="detailDialog"><div class="modal-card detail-modal">
+    <div class="modal-head"><div><h2 id="detailTitle"></h2><p id="detailSubtitle">Товар QUATT QURYLYS</p></div><button type="button" class="close" data-close="detailDialog">×</button></div>
+    <div id="detailContent"></div>
+  </div></dialog>
+
+  <dialog id="lightboxDialog" class="lightbox-dialog"><div class="lightbox-shell">
+    <button id="lightboxClose" class="lightbox-close" type="button">×</button>
+    <button id="lightboxPrev" class="lightbox-nav prev" type="button">‹</button>
+    <div id="lightboxStage" class="lightbox-stage"><img id="lightboxImage" alt="Фото товара"></div>
+    <button id="lightboxNext" class="lightbox-nav next" type="button">›</button>
+    <div class="lightbox-bar"><span id="lightboxCounter"></span><button id="zoomOutBtn">−</button><button id="zoomResetBtn">100%</button><button id="zoomInBtn">＋</button></div>
+  </div></dialog>
+
+  <dialog id="productDialog"><form id="productForm" class="modal-card form-modal">
+    <div class="modal-head"><div><h2 id="productDialogTitle">Новый товар</h2><p>Фото и розничную информацию увидит клиент. Закуп и поставщика — только администраторы.</p></div><button type="button" class="close" data-close="productDialog">×</button></div>
+    <input id="productId" type="hidden">
+    <div class="upload-box">
+      <span class="camera" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.5 4 16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1.5-2h5Z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>
+      <b>Добавить фотографии</b><span>До 5 фото · до 20 МБ каждое · сайт сам уменьшит большие фото</span>
+      <input id="photoInput" type="file" multiple accept="image/jpeg,image/png,image/webp" capture="environment">
     </div>
-  </dialog>
+    <div id="photoThumbs" class="thumbs"></div>
 
-  <dialog id="productDialog">
-    <form id="productForm" class="modal-card form-modal">
-      <div class="modal-head">
-        <div><h2 id="productDialogTitle">Новый товар</h2><p>Фото и розничную цену увидит клиент. Закуп и поставщика — только администраторы.</p></div>
-        <button type="button" class="close" data-close="productDialog">×</button>
-      </div>
-      <input id="productId" type="hidden">
-
-      <div class="upload-box">
-        <span class="camera" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.5 4 16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1.5-2h5Z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><b>Добавить фотографии</b>
-        <span>До 5 фото · JPG, PNG, WebP · до 8 МБ</span>
-        <input id="photoInput" type="file" multiple accept="image/jpeg,image/png,image/webp" capture="environment">
-      </div>
-      <div id="photoThumbs" class="thumbs"></div>
-
-      <div class="form-grid">
-        <label>Название товара *<input id="fName" required></label>
-        <label>Категория
-          <select id="fCategory" class="choice"></select>
-          <div id="ownerCategoryAdd" class="category-add hidden">
-            <input id="newCategoryInForm" placeholder="Новая категория">
-            <button id="addCategoryInFormBtn" type="button">＋ Добавить</button>
-          </div>
-        </label>
-        <label>Бренд<input id="fBrand"></label>
-        <label>Артикул<input id="fArticle"></label>
-        <label>Розничная цена, ₸ *<input id="fPrice" type="number" min="0" step="0.01" required></label>
-        <label>Срок поставки<input id="fDelivery" value="1 день"></label>
-        <label class="wide">Характеристики: название и значение, с новой строки<textarea id="fSpecs"></textarea></label>
-        <label class="wide">Ключевые слова для поиска<textarea id="fKeywords"></textarea></label>
-      </div>
-
-      <section class="internal">
-        <h3>✓ Только для администраторов</h3>
-        <div class="form-grid">
-          <label>Закупочная цена, ₸ *<input id="fCost" type="number" min="0" step="0.01" required></label>
-          <label>Поставщик / магазин<input id="fSupplier"></label>
-          <label class="wide">Адрес поставщика<input id="fSupplierAddress"></label>
-          <label>Контакт поставщика<input id="fSupplierContact"></label>
-          <label>Дата проверки цены<input id="fCheckedDate" type="date"></label>
-          <label class="wide">Внутренние заметки<textarea id="fNotes"></textarea></label>
-        </div>
-
-        <div class="markup">
-          <span>Наценка:</span>
-          <button type="button" data-markup="20">+20%</button>
-          <button type="button" data-markup="25">+25%</button>
-          <button type="button" data-markup="30">+30%</button>
-          <button type="button" data-markup="50">+50%</button>
-          <button type="button" data-markup="75">+75%</button>
-          <button type="button" data-markup="100">+100%</button>
-          <div class="manual-markup">
-            <label>Своя наценка, %</label>
-            <input id="manualMarkup" type="number" min="0" step="0.1" placeholder="например 135">
-            <button id="applyManualMarkup" type="button">Применить</button>
-          </div>
-          <span id="marginInfo">Маржа: 0 ₸</span>
-        </div>
-      </section>
-
-      <label class="switch-row">
-          <input id="fActive" class="switch-input" type="checkbox" checked>
-          <span class="switch-ui" aria-hidden="true"></span>
-          <span>Показывать в каталоге</span>
-        </label>
-
-      <div class="form-actions">
-        <button id="deleteProductBtn" class="danger hidden" type="button">Удалить</button>
-        <span class="spacer"></span>
-        <button class="primary" type="submit">✓ Сохранить товар</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="manageDialog">
-    <div class="modal-card manage-modal">
-      <div class="modal-head">
-        <div><h2>Доступ и категории</h2><p>Владелец управляет ролями и категориями.</p></div>
-        <button type="button" class="close" data-close="manageDialog">×</button>
-      </div>
-
-      <section id="staffSection">
-        <h3>Назначить роль</h3>
-        <form id="staffForm" class="staff-form">
-          <label>Email сотрудника<input id="staffEmail" type="email" required></label>
-          <label>Роль
-            <select id="staffRole" class="choice">
-              <option value="seller">Продавец</option>
-              <option value="admin">Администратор</option>
-            </select>
-          </label>
-          <button class="primary" type="submit">Сохранить доступ</button>
-        </form>
-        <div id="staffList" class="member-list"></div>
-      </section>
-
-      <section id="sellerNamesSection">
-        <h3>Имена продавцов</h3>
-        <p class="section-help">Все продавцы могут входить под одной общей учёткой. Здесь задаются имена, по которым разделяются корзины и заказы.</p>
-        <form id="sellerNameForm" class="category-form">
-          <input id="newSellerName" placeholder="Имя продавца" required>
-          <button class="primary" type="submit">Добавить</button>
-        </form>
-        <div id="sellerNamesList" class="category-manager"></div>
-      </section>
-
-      <section>
-        <h3>Категории</h3>
-        <form id="categoryForm" class="category-form">
-          <input id="newCategoryName" placeholder="Новая категория" required>
-          <button class="primary" type="submit">Добавить</button>
-        </form>
-        <div id="categoryManager" class="category-manager"></div>
-      </section>
+    <div class="form-grid">
+      <label>Название товара *<input id="fName" required></label>
+      <label>Категория<select id="fCategory" class="choice"></select><div id="ownerCategoryAdd" class="category-add hidden"><input id="newCategoryInForm" placeholder="Новая категория"><button id="addCategoryInFormBtn" type="button">＋ Добавить</button></div></label>
+      <label>Бренд<input id="fBrand"></label>
+      <label>Розничная цена, ₸ *<input id="fPrice" type="number" min="0" step="0.01" required></label>
+      <label>Как показывать цену<select id="fPriceMode" class="choice"><option value="show">Обычная цена</option><option value="from">Цена от</option><option value="ask">Уточнить цену</option></select></label>
+      <label>Наличие<select id="fAvailability" class="choice"><option value="order">Под заказ</option><option value="in_stock">В наличии</option><option value="out_of_stock">Нет в наличии</option></select></label>
+      <label>Метка<select id="fBadge" class="choice"><option value="">Без метки</option><option>Хит</option><option>Новинка</option><option>Акция</option><option>Рекомендуем</option></select></label>
+      <label>Срок поставки<input id="fDelivery" value="1 день"></label>
+      <label>Старая цена, ₸<input id="fOldPrice" type="number" min="0" step="0.01"></label>
+      <label>Акция до<input id="fSaleEnd" type="date"></label>
+      <label class="wide">Характеристики — по одной строке в формате «Материал: Латунь»<textarea id="fSpecs" rows="6"></textarea></label>
+      <label class="wide">Варианты — по одной строке: «20 мм | 1200»<textarea id="fVariants" rows="4"></textarea></label>
+      <label class="wide">Ссылка на видео товара<input id="fVideoUrl" type="url" placeholder="https://..."></label>
+      <label class="wide">Похожие товары<select id="fRelated" class="multi-select" multiple></select></label>
+      <label class="wide">С этим товаром покупают<select id="fBundle" class="multi-select" multiple></select></label>
     </div>
-  </dialog>
 
-
-  <dialog id="cartDialog" class="modal">
-    <div class="modal-card medium">
-      <div class="modal-head"><div><h2>Корзина</h2><p>Товары, которые клиент хочет заказать.</p></div><button type="button" class="close-btn" data-close="cartDialog">×</button></div>
-      <div id="cartItems"></div>
-      <div id="cartTotal" class="cart-total"></div>
-      <button id="checkoutBtn" class="primary-btn wide" type="button">Оформить под заказ</button>
+    <section class="internal"><h3>✓ Только для администраторов</h3><div class="form-grid">
+      <label>Закупочная цена, ₸ *<input id="fCost" type="number" min="0" step="0.01" required></label>
+      <label>Поставщик / магазин<input id="fSupplier"></label>
+      <label class="wide">Адрес поставщика<input id="fSupplierAddress"></label>
+      <label>Контакт поставщика<input id="fSupplierContact"></label>
+      <label>Дата проверки цены<input id="fCheckedDate" type="date"></label>
+      <label class="wide">Внутренние заметки<textarea id="fNotes"></textarea></label>
     </div>
-  </dialog>
+    <div class="markup"><span>Наценка:</span><button type="button" data-markup="20">+20%</button><button type="button" data-markup="25">+25%</button><button type="button" data-markup="30">+30%</button><button type="button" data-markup="50">+50%</button><button type="button" data-markup="75">+75%</button><button type="button" data-markup="100">+100%</button><div class="manual-markup"><label>Своя, %</label><input id="manualMarkup" type="number" min="0" step="0.1"><button id="applyManualMarkup" type="button">Применить</button></div><span id="marginInfo">Маржа: 0 ₸</span></div></section>
 
-  <dialog id="checkoutDialog" class="modal">
-    <form id="checkoutForm" method="dialog" class="modal-card small">
-      <div class="modal-head"><div><h2>Оформить заказ</h2><p>После сохранения заказ увидит администратор.</p></div><button type="button" class="close-btn" data-close="checkoutDialog">×</button></div>
-      <label>Имя клиента<input id="clientName" required></label>
-      <label>Телефон<input id="clientPhone"></label>
-      <label>Комментарий<textarea id="orderNote" rows="3"></textarea></label>
-      <label>Статус<select id="initialStatus"><option value="interest">Клиент интересуется</option><option value="paid">Оплачено</option></select></label>
-      <button class="primary-btn wide" type="submit">Создать заказ</button>
-    </form>
-  </dialog>
+    <label class="switch-row"><input id="fActive" class="switch-input" type="checkbox" checked><span class="switch-ui"></span><span>Показывать в каталоге</span></label>
+    <div class="form-actions"><button id="deleteProductBtn" class="danger hidden" type="button">Удалить</button><span class="spacer"></span><button class="primary" type="submit">✓ Сохранить товар</button></div>
+  </form></dialog>
 
-  <dialog id="ordersDialog" class="modal">
-    <div class="modal-card orders-modal">
-      <div class="modal-head"><div><h2 id="ordersDialogTitle">Заказы</h2><p id="ordersDialogSub">Новые и текущие заказы.</p></div><button type="button" class="close-btn" data-close="ordersDialog">×</button></div>
-      <div class="order-tabs" id="orderTabs">
-        <button type="button" class="order-tab active" data-order-tab="active">Заказы</button>
-        <button type="button" class="order-tab" data-order-tab="completed">Завершённые</button>
-        <button type="button" class="order-tab" data-order-tab="cancelled">Отменённые</button>
-      </div>
-      <div id="ordersList"></div>
-    </div>
-  </dialog>
+  <dialog id="manageDialog"><div class="modal-card manage-modal">
+    <div class="modal-head"><div><h2>Управление</h2><p>Сотрудники, продавцы, категории, баннеры и обмен данными.</p></div><button type="button" class="close" data-close="manageDialog">×</button></div>
+    <section id="staffSection"><h3>Доступ сотрудников</h3><form id="staffForm" class="staff-form"><label>Email<input id="staffEmail" type="email" required></label><label>Роль<select id="staffRole" class="choice"><option value="seller">Продавец</option><option value="admin">Администратор</option></select></label><button class="primary" type="submit">Сохранить доступ</button></form><div id="staffList"></div></section>
+    <section><h3>Имена продавцов</h3><p class="section-help">Одна общая учётка продавцов, но корзины и заказы разделяются по выбранному имени.</p><form id="sellerNameForm" class="category-form"><input id="newSellerName" placeholder="Имя продавца" required><button class="primary" type="submit">Добавить</button></form><div id="sellerNamesList"></div></section>
+    <section><h3>Категории</h3><form id="categoryForm" class="category-form"><input id="newCategoryName" placeholder="Новая категория" required><button class="primary" type="submit">Добавить</button></form><div id="categoryManager"></div></section>
+    <section><h3>Баннеры главной</h3><form id="bannerForm" class="banner-form"><input id="bannerTitle" placeholder="Заголовок" required><input id="bannerSubtitle" placeholder="Подзаголовок"><select id="bannerCategory" class="choice"></select><button class="primary" type="submit">Добавить</button></form><div id="bannerManager"></div></section>
+    <section><h3>Импорт / экспорт</h3><div class="action-row"><label class="file-btn">Импорт Excel<input id="excelImport" type="file" accept=".xlsx,.xls,.csv"></label><button id="exportExcelBtn" class="small-btn">Экспорт Excel</button><button id="exportSatuBtn" class="small-btn">Экспорт для Satu.kz</button></div><p class="fine">При импорте поддерживаются колонки: Название, Категория, Бренд, Цена, Закуп, Характеристики, Поставщик. Перед массовым импортом лучше проверить 2–3 строки.</p></section>
+  </div></dialog>
 
-  <script type="module" src="./app.js"></script>
+  <dialog id="cartDialog"><div class="modal-card medium"><div class="modal-head"><div><h2>Корзина продавца</h2><p>Заказ от выбранного продавца.</p></div><button type="button" class="close-btn" data-close="cartDialog">×</button></div><div id="cartItems"></div><div id="cartTotal" class="cart-total"></div><button id="checkoutBtn" class="primary-btn wide">Оформить под заказ</button></div></dialog>
+  <dialog id="checkoutDialog"><form id="checkoutForm" class="modal-card small"><div class="modal-head"><div><h2>Оформить заказ</h2><p>После сохранения заказ увидит администратор.</p></div><button type="button" class="close-btn" data-close="checkoutDialog">×</button></div><label>Имя клиента<input id="clientName" required></label><label>Телефон<input id="clientPhone"></label><label>Комментарий<textarea id="orderNote" rows="3"></textarea></label><label>Статус<select id="initialStatus"><option value="interest">Клиент интересуется</option><option value="paid">Оплачено</option></select></label><button class="primary-btn wide" type="submit">Создать заказ</button></form></dialog>
+  <dialog id="ordersDialog"><div class="modal-card orders-modal"><div class="modal-head"><div><h2 id="ordersDialogTitle">Заказы</h2><p id="ordersDialogSub">Новые и текущие заказы.</p></div><button type="button" class="close-btn" data-close="ordersDialog">×</button></div><div class="order-tabs" id="orderTabs"><button type="button" class="order-tab active" data-order-tab="active">Заказы</button><button type="button" class="order-tab" data-order-tab="completed">Завершённые</button><button type="button" class="order-tab" data-order-tab="cancelled">Отменённые</button></div><div id="ordersList"></div></div></dialog>
+
+  <dialog id="favoritesDialog"><div class="modal-card medium"><div class="modal-head"><div><h2>Избранное</h2><p>Сохранённые товары на этом устройстве.</p></div><button type="button" class="close" data-close="favoritesDialog">×</button></div><div id="favoritesList" class="mini-grid"></div></div></dialog>
+  <dialog id="customerCartDialog"><div class="modal-card medium"><div class="modal-head"><div><h2>Корзина клиента</h2><p>Соберите список и отправьте его в WhatsApp.</p></div><button type="button" class="close" data-close="customerCartDialog">×</button></div><div id="customerCartItems"></div><div id="customerCartTotal" class="cart-total"></div><button id="sendCustomerCartBtn" class="whatsapp-btn wide">Отправить заявку в WhatsApp</button></div></dialog>
+  <dialog id="contactsDialog"><div class="modal-card small"><div class="modal-head"><div><h2>Контакты QUATT</h2><p>Свяжитесь с нами удобным способом.</p></div><button type="button" class="close" data-close="contactsDialog">×</button></div><a class="contact-card" href="tel:+77076154747"><strong>+7 707 615 4747</strong><span>Позвонить</span></a><button id="contactWhatsappBtn" class="whatsapp-btn wide">Написать в WhatsApp</button><p class="fine">Нұрсая 17, Атырау · ежедневно 09:00–21:00</p></div></dialog>
+
+  <dialog id="dashboardDialog"><div class="modal-card dashboard-modal"><div class="modal-head"><div><h2>Дашборд</h2><p>Каталог и активность клиентов.</p></div><button type="button" class="close" data-close="dashboardDialog">×</button></div><div id="dashboardContent"></div></div></dialog>
+
+  <dialog id="bulkDialog"><div class="modal-card bulk-modal"><div class="modal-head"><div><h2>Массовое редактирование</h2><p>Выберите товары и примените действие.</p></div><button type="button" class="close" data-close="bulkDialog">×</button></div><div class="bulk-controls"><button id="bulkSelectAll" class="small-btn">Выбрать все</button><select id="bulkCategory" class="choice"></select><input id="bulkMarkup" type="number" min="0" step="0.1" placeholder="Наценка, %"><select id="bulkVisibility" class="choice"><option value="">Видимость — не менять</option><option value="true">Показать</option><option value="false">Скрыть</option></select><button id="applyBulkBtn" class="primary">Применить</button></div><div id="bulkProducts" class="bulk-products"></div></div></dialog>
+
+  <script type="module" src="./app.js?v=24"></script>
 </body>
 </html>
