@@ -272,7 +272,7 @@ let searchTimer;function maybeLogSearch(){
   if(isAdmin()||isProcurement()) return;
   searchTimer=setTimeout(()=>{
     const term=state.q.trim();
-    if(term.length>=2)supabase.from("catalog_search_events").insert({term:term.slice(0,120)}).then(()=>{});
+    if(term.length>=2)supabase.rpc("log_catalog_search",{p_term:term.slice(0,120)}).then(()=>{});
   },900);
 }
 function renderSearchSuggestions(){const q=norm(state.q);if(q.length<1){el.searchSuggestions.classList.add("hidden");return}const rows=state.products.filter(p=>(canViewInternal()||p.active!==false)&&norm(`${p.name} ${p.brand||""}`).includes(q)).slice(0,7);el.searchSuggestions.classList.toggle("hidden",!rows.length);el.searchSuggestions.innerHTML=rows.map(p=>`<button data-suggest-product="${p.id}"><b>${esc(p.name)}</b>${p.brand?`<span>${esc(p.brand)}</span>`:""}</button>`).join("");el.searchSuggestions.querySelectorAll("[data-suggest-product]").forEach(b=>b.onclick=()=>{el.searchSuggestions.classList.add("hidden");openDetail(b.dataset.suggestProduct)})}
@@ -292,27 +292,59 @@ async function clearDashboardAnalytics(kind){
     if(isViews)renderProducts();
   }catch(e){toast(e.message||String(e),true)}
 }
+async function deleteDashboardSearch(term){
+  if(!isAdmin())return;
+  if(!confirm(`Удалить из статистики запрос «${term}»?`))return;
+  try{
+    const {error}=await supabase.rpc("delete_catalog_search_term",{p_term:term});
+    if(error)throw error;
+    toast("Поисковый запрос удалён");
+    await openDashboard(true);
+  }catch(e){toast(e.message||String(e),true)}
+}
+async function blockDashboardSearch(term){
+  if(!isAdmin())return;
+  if(!confirm(`Скрыть запрос «${term}» и больше не учитывать его в дашборде?`))return;
+  try{
+    const {error}=await supabase.rpc("block_catalog_search_term",{p_term:term});
+    if(error)throw error;
+    toast("Запрос скрыт и больше не будет учитываться");
+    await openDashboard(true);
+  }catch(e){toast(e.message||String(e),true)}
+}
+async function unblockDashboardSearch(term){
+  if(!isAdmin())return;
+  try{
+    const {error}=await supabase.rpc("unblock_catalog_search_term",{p_term:term});
+    if(error)throw error;
+    toast("Запрос снова разрешён");
+    await openDashboard(true);
+  }catch(e){toast(e.message||String(e),true)}
+}
 async function openDashboard(refreshOnly=false){
   if(!isAdmin())return;
   if(!refreshOnly)el.dashboardDialog.showModal();
   el.dashboardContent.innerHTML="Загрузка…";
   try{
     const since=new Date(Date.now()-30*864e5).toISOString();
-    const [views,searches,orders]=await Promise.all([
+    const [views,searches,orders,blocked]=await Promise.all([
       supabase.from("product_view_events").select("product_id,viewed_at").gte("viewed_at",since),
       supabase.from("catalog_search_events").select("term,searched_at").gte("searched_at",since),
-      supabase.from("orders").select("id,status,total_amount,created_at").gte("created_at",since)
+      supabase.from("orders").select("id,status,total_amount,created_at").gte("created_at",since),
+      supabase.rpc("get_catalog_search_blocklist")
     ]);
     if(views.error)throw views.error;
     if(searches.error)throw searches.error;
     if(orders.error)throw orders.error;
+    if(blocked.error)throw blocked.error;
     const vc={};
     (views.data||[]).forEach(v=>vc[v.product_id]=(vc[v.product_id]||0)+1);
     state.viewCounts=vc;
     const topViews=Object.entries(vc).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const sc={};
-    (searches.data||[]).forEach(s=>{const k=norm(s.term);if(k)sc[k]=(sc[k]||0)+1});
-    const topSearch=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const sc={},searchLabels={};
+    (searches.data||[]).forEach(s=>{const k=norm(s.term);if(k){sc[k]=(sc[k]||0)+1;if(!searchLabels[k])searchLabels[k]=String(s.term||k)}});
+    const topSearch=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,20);
+    const blockedTerms=(blocked.data||[]).map(x=>typeof x==="string"?x:(x.term_display||x.term_norm||"")).filter(Boolean);
     const os=orders.data||[];
     el.dashboardContent.innerHTML=`
       <div class="dash-stats">
@@ -336,11 +368,15 @@ async function openDashboard(refreshOnly=false){
             <h3 style="margin:0">Что ищут клиенты</h3>
             <button class="small-btn danger-lite" id="clearSearchAnalyticsBtn" type="button">Очистить поиски</button>
           </div>
-          ${topSearch.length?topSearch.map(([q,n],i)=>`<div class="rank"><span>${i+1}. ${esc(q)}</span><b>${n}</b></div>`).join(""):'<p class="fine">Пока мало данных.</p>'}
+          ${topSearch.length?topSearch.map(([q,n],i)=>{const label=searchLabels[q]||q;return `<div class="rank dashboard-search-row"><span>${i+1}. ${esc(label)}</span><b>${n}</b><span class="dash-row-actions"><button class="small-btn" type="button" data-delete-search="${esc(label)}">Удалить</button><button class="small-btn danger-lite" type="button" data-block-search="${esc(label)}">Не показывать</button></span></div>`}).join(""):'<p class="fine">Пока мало данных.</p>'}
+          ${blockedTerms.length?`<div class="blocked-searches"><h4>Скрытые запросы</h4>${blockedTerms.map(term=>`<div class="rank"><span>${esc(term)}</span><button class="small-btn" type="button" data-unblock-search="${esc(term)}">Вернуть</button></div>`).join("")}</div>`:""}
         </section>
       </div>`;
     document.getElementById("clearViewsAnalyticsBtn")?.addEventListener("click",()=>clearDashboardAnalytics("views"));
     document.getElementById("clearSearchAnalyticsBtn")?.addEventListener("click",()=>clearDashboardAnalytics("searches"));
+    el.dashboardContent.querySelectorAll("[data-delete-search]").forEach(b=>b.onclick=()=>deleteDashboardSearch(b.dataset.deleteSearch));
+    el.dashboardContent.querySelectorAll("[data-block-search]").forEach(b=>b.onclick=()=>blockDashboardSearch(b.dataset.blockSearch));
+    el.dashboardContent.querySelectorAll("[data-unblock-search]").forEach(b=>b.onclick=()=>unblockDashboardSearch(b.dataset.unblockSearch));
     renderProducts();
   }catch(e){el.dashboardContent.innerHTML=`<p class="error-text">${esc(e.message||e)}</p>`}
 }
@@ -358,7 +394,7 @@ el.excelImport.onchange=async()=>{const file=el.excelImport.files?.[0];el.excelI
 el.searchInput.oninput=()=>{state.q=el.searchInput.value;el.clearSearchBtn.classList.toggle("hidden",!state.q);renderSearchSuggestions();renderProducts();maybeLogSearch()};el.clearSearchBtn.onclick=()=>{el.searchInput.value="";state.q="";el.clearSearchBtn.classList.add("hidden");el.searchSuggestions.classList.add("hidden");renderProducts()};el.brandFilter.onchange=()=>{state.brand=el.brandFilter.value;renderProducts()};el.availabilityFilter.onchange=()=>{state.availability=el.availabilityFilter.value;renderProducts()};el.maxPrice.oninput=()=>{state.max=el.maxPrice.value;renderProducts()};el.sortFilter.onchange=()=>{state.sort=el.sortFilter.value;renderProducts()};el.mobileCategory.onchange=()=>setCat(el.mobileCategory.value);
 el.loginBtn.onclick=()=>el.loginDialog.showModal();el.loginForm.onsubmit=async e=>{e.preventDefault();el.loginError.textContent="";const {data,error}=await supabase.auth.signInWithPassword({email:el.loginEmail.value.trim(),password:el.loginPassword.value});if(error){el.loginError.textContent=error.message;return}state.session=data.session;state.roleMode="native";el.loginDialog.close();await loadRole();await loadData();refreshOrdersBadge(false)};el.logoutBtn.onclick=async()=>{await supabase.auth.signOut();state.session=null;state.role="guest";state.roleMode="native";state.customerMode=false;state.selectedSellerId=null;state.cart=[];await loadData()};
 el.roleModeBtn.onclick=()=>{if(!isAdmin())return;state.customerMode=false;state.roleMode=state.roleMode==="seller"?"native":"seller";syncSelectedSeller();render()};el.customerModeBtn.onclick=()=>{if(!isAdmin())return;state.customerMode=!state.customerMode;if(state.customerMode)state.roleMode="native";syncSelectedSeller();render()};el.addProductBtn.onclick=()=>openProduct();el.mobileAddProductBtn.onclick=()=>openProduct();el.manageBtn.onclick=openManage;el.manageBtnDesktop.onclick=openManage;el.sellerPicker.onchange=()=>{state.selectedSellerId=el.sellerPicker.value||null;if(state.selectedSellerId)localStorage.setItem(sellerSelectionKey(),state.selectedSellerId);loadCart();renderAuth()};el.cartBtn.onclick=()=>{if(!requireSeller())return;renderCart();el.cartDialog.showModal()};el.checkoutBtn.onclick=()=>{if(!state.cart.length||!requireSeller())return;resetCheckoutForm();el.cartDialog.close();el.checkoutDialog.showModal()};el.checkoutForm.onsubmit=async e=>{e.preventDefault();try{const o=await createOrder();if(o){el.checkoutDialog.close();toast(`Заказ №${o.order_number} создан`);resetCheckoutForm()}}catch(e){toast(e.message||String(e),true)}};el.ordersBtn.onclick=()=>{state.orderTab="active";if(canManageOrders())openOrders(true)};el.myOrdersBtn.onclick=()=>{state.orderTab="active";openOrders(false)};
-el.favoritesBtn.onclick=()=>{renderFavorites();el.favoritesDialog.showModal()};el.customerCartBtn.onclick=()=>{renderCustomerCart();el.customerCartDialog.showModal()};el.sendCustomerCartBtn.onclick=sendCustomerCart;el.contactsBtn.onclick=()=>el.contactsDialog.showModal();el.contactWhatsappBtn.onclick=()=>openWhatsapp();el.footerWhatsappBtn.onclick=()=>openWhatsapp();el.helpWhatsappBtn.onclick=()=>openWhatsapp("Здравствуйте! Пришёл с сайта QUATT QURYLYS. Не нашёл нужный товар. Помогите подобрать / заказать.");el.notFoundBtn.onclick=()=>el.helpWhatsappBtn.click();el.recentBtn.onclick=()=>{el.recentSection.classList.remove("hidden");el.recentSection.scrollIntoView({behavior:"smooth"})};el.clearRecentBtn.onclick=()=>{state.recent=[];saveLocal();renderRecent()};el.dashboardBtn.onclick=openDashboard;el.bulkBtn.onclick=openBulk;
+el.favoritesBtn.onclick=()=>{renderFavorites();el.favoritesDialog.showModal()};el.customerCartBtn.onclick=()=>{renderCustomerCart();el.customerCartDialog.showModal()};el.sendCustomerCartBtn.onclick=sendCustomerCart;el.contactsBtn.onclick=()=>el.contactsDialog.showModal();el.contactWhatsappBtn.onclick=()=>openWhatsapp();el.footerWhatsappBtn.onclick=()=>openWhatsapp();el.helpWhatsappBtn.onclick=()=>openWhatsapp("Здравствуйте! Пришёл с сайта QUATT QURYLYS. Не нашёл нужный товар. Помогите подобрать / заказать.");el.notFoundBtn.onclick=()=>el.helpWhatsappBtn.click();el.recentBtn.onclick=()=>{el.recentSection.classList.remove("hidden");el.recentSection.scrollIntoView({behavior:"smooth"})};el.clearRecentBtn.onclick=()=>{state.recent=[];saveLocal();renderRecent()};el.dashboardBtn.onclick=()=>openDashboard(false);el.bulkBtn.onclick=openBulk;
 
 async function init(){loadLocal();const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();await loadData();renderLocalBadges();if(isAdmin()||isProcurement()){refreshOrdersBadge(false);setInterval(()=>refreshOrdersBadge(true),30000)}if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=25").catch(()=>{})}
 init();
