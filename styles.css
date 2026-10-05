@@ -83,3 +83,25 @@ header{height:104px;min-height:104px;padding:16px 30px;gap:20px;overflow:hidden}
 @media(max-width:1200px){header{padding-inline:20px}.logo-wrap{width:150px;height:56px;flex-basis:150px}.header-title{font-size:16px}.client{padding-inline:11px}.header-right{gap:7px}}
 @media(max-width:980px){header{height:96px;min-height:96px}.customer-mode header,.seller-mode header{height:96px;min-height:96px}.workspace{min-height:calc(100vh - 96px)}aside{top:96px;height:calc(100vh - 96px)}.header-right{max-width:none}}
 @media(max-width:760px){header{height:auto;min-height:86px;overflow:visible;flex-wrap:wrap;padding:13px 16px}.customer-mode header,.seller-mode header{height:auto;min-height:86px}.logo-wrap{width:128px;height:48px;flex-basis:128px}.header-right{height:48px!important;width:100%;margin-left:0;overflow-x:auto;padding-bottom:3px}.client{height:40px;min-height:40px;font-size:12px;padding-inline:10px}.workspace{min-height:calc(100vh - 86px)}.history-change{grid-template-columns:1fr;gap:3px}}
+
+/* ===== V2.5.1 — strict header, categories and sale deadline ===== */
+header{height:92px;min-height:92px;padding:13px 24px;gap:16px;border-bottom:1px solid #222;overflow:visible}
+.logo-wrap{width:166px;height:60px;flex:0 0 166px}.header-divider{height:38px;border-color:#3a3a3a}.header-title{font-size:17px;font-weight:800;letter-spacing:-.2px}
+.header-right{height:44px;min-width:0;gap:6px;overflow:visible;padding:0;scrollbar-width:none;white-space:nowrap}.header-right::-webkit-scrollbar{display:none}
+.client{height:38px;min-height:38px;padding:0 11px;border:1px solid #343434;border-radius:3px;background:#050505;font-size:13px;font-weight:700;gap:6px;box-shadow:none}
+.client:hover{background:#151515;border-color:#666;transform:none}.mode-switch{background:#0d0d0d;border-color:#555}.login-accent{height:38px!important;border-radius:3px!important;padding-inline:18px!important}.header-right .link-btn{height:38px;padding:0 7px;color:#c7c7c7;font-size:13px}.seller-picker{height:38px;border-radius:3px;padding:0 8px;gap:6px}.seller-picker select{height:30px;border-radius:2px;max-width:120px}
+.internal-mode #favoritesBtn,.internal-mode #customerCartBtn,.seller-mode #favoritesBtn,.seller-mode #customerCartBtn,.seller-mode .contact-top{display:none!important}
+.customer-mode #dashboardBtn,.customer-mode #bulkBtn,.customer-mode #ordersBtn,.customer-mode #manageBtn,.customer-mode #manageBtnDesktop{display:none!important}
+.workspace{min-height:calc(100vh - 92px)}aside{top:92px;height:calc(100vh - 92px)}
+
+.nav{min-height:40px;border-radius:0;padding:10px 10px 10px 12px;border-left:3px solid transparent;transition:background .12s,border-color .12s;color:#171717}
+.nav:hover{background:#f7f7f7}.nav.selected{background:#fffce0;color:#111;font-weight:800;box-shadow:none;border-left-color:var(--yellow)}.nav.selected:hover{background:#fffce0}
+.nav .count{margin-left:auto;min-width:auto;padding:0;background:none!important;color:#999!important;font-size:12px;font-weight:600;text-align:right;border-radius:0}
+.nav.selected .count{color:#111!important;font-weight:800}
+
+.sale-deadline{margin-top:7px;font-size:12px;font-weight:700;color:#c62828}.detail-sale{font-size:13px;margin-top:8px}.old-price{margin-left:2px}
+
+@media(max-width:1380px){.contact-top{display:none!important}.header-title{font-size:15px}.logo-wrap{width:150px;height:54px;flex-basis:150px}.client{padding-inline:9px}.header-right{gap:5px}}
+@media(max-width:1210px){.header-divider,.header-title{display:none}.logo-wrap{width:145px;height:52px;flex-basis:145px}.client{font-size:12px;padding-inline:8px}.header-right .link-btn{font-size:12px}.seller-picker{font-size:12px}}
+@media(max-width:980px){header{height:88px;min-height:88px;padding:12px 16px}.workspace{min-height:calc(100vh - 88px)}aside{top:88px;height:calc(100vh - 88px)}.logo-wrap{width:132px;height:48px;flex-basis:132px}.header-right{gap:4px}.client{height:36px;min-height:36px}}
+@media(max-width:760px){header{min-height:84px;height:auto;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:8px 12px;padding:10px 12px}.logo-wrap{width:128px;height:46px;flex-basis:auto}.header-right{grid-column:1/-1;width:100%;height:auto!important;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;overflow:visible;margin:0}.header-right>*{min-width:0!important;width:100%}.client,.header-right .link-btn,.seller-picker{height:38px!important;justify-content:center;font-size:11px;padding:0 7px}.seller-picker{display:flex}.seller-picker select{max-width:100%;min-width:0}.workspace{min-height:calc(100vh - 84px)}}

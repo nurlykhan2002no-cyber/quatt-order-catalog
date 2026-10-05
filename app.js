@@ -52,8 +52,11 @@ function publicUrl(path){return path?supabase.storage.from(STORAGE_BUCKET).getPu
 function imgsFor(id){return state.images.filter(i=>i.product_id===id).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))}
 function catName(id){return state.categories.find(c=>c.id===id)?.name||"Без категории"}
 function availabilityLabel(v){return v==="in_stock"?"В наличии":v==="out_of_stock"?"Нет в наличии":"Под заказ"}
-function priceText(p){if(p.price_mode==="ask")return "Уточнить цену";return (p.price_mode==="from"?"от ":"")+money(p.price)}
-function validSale(p){return Number(p.old_price)>Number(p.price) && (!p.sale_end || new Date(p.sale_end+"T23:59:59")>=new Date())}
+function saleExpired(p){return !!p.sale_end && new Date(p.sale_end+"T23:59:59")<new Date()}
+function validSale(p){return Number(p.old_price)>Number(p.price) && (!p.sale_end || !saleExpired(p))}
+function effectivePrice(p){return Number(p.old_price)>Number(p.price) && saleExpired(p)?Number(p.old_price):Number(p.price)}
+function priceText(p){if(p.price_mode==="ask")return "Уточнить цену";return (p.price_mode==="from"?"от ":"")+money(effectivePrice(p))}
+function saleInfo(p){if(!validSale(p)||!p.sale_end)return "";const end=new Date(p.sale_end+"T23:59:59"),now=new Date();const days=Math.max(0,Math.ceil((end-now)/86400000));const date=new Date(p.sale_end+"T00:00:00").toLocaleDateString("ru-RU");if(days===0)return `Акция заканчивается сегодня`;if(days<=3)return `Акция до ${date} · осталось ${days} ${days===1?"день":"дня"}`;return `Акция до ${date}`}
 function whatsappUrl(text=BASE_WA){return `https://wa.me/${PHONE}?text=${encodeURIComponent(text)}`}
 function openWhatsapp(text){window.open(whatsappUrl(text),"_blank","noopener")}
 
@@ -86,7 +89,7 @@ function renderAuth(){
   el.logoutBtn.classList.toggle("hidden",!state.session||clientView);
   el.customerModeBtn.classList.toggle("hidden",!isAdmin()||sellerView);
   el.roleModeBtn.classList.toggle("hidden",!isAdmin()||clientView);
-  el.roleModeBtn.textContent=state.roleMode==="seller"?"⇄ Режим администратора":"⇄ Режим продавца";
+  el.roleModeBtn.textContent=state.roleMode==="seller"?"⇄ Администратор":"⇄ Продавец";
   el.manageBtn.classList.toggle("hidden",!isAdmin()||!internal);
   el.sideBottom.classList.toggle("hidden",!isAdmin()||!internal);
   el.addProductBtn.classList.toggle("hidden",!canEditProducts());
@@ -99,9 +102,10 @@ function renderAuth(){
   el.cartBtn.classList.toggle("hidden",!sellerView||clientView);
   el.sellerPickerWrap.classList.toggle("hidden",!sellerView||clientView);
   if(sellerView){const active=state.sellerNames.filter(x=>x.active!==false);el.sellerPicker.innerHTML=active.length?active.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join(""):`<option value="">Нет имён</option>`;el.sellerPicker.value=state.selectedSellerId||"";el.sellerPicker.disabled=!active.length}
-  el.customerModeBtn.textContent=clientView?"◉ Выйти из режима клиента":"◉ Режим клиента";
+  el.customerModeBtn.textContent=clientView?"◉ Выйти из режима":"◉ Клиент";
   document.body.classList.toggle("customer-mode",clientView);
   document.body.classList.toggle("seller-mode",sellerView&&!clientView);
+  document.body.classList.toggle("internal-mode",internal&&!sellerView&&!clientView);
   renderLocalBadges();
 }
 
@@ -132,7 +136,7 @@ function filteredProducts(){
   for(const [k,v] of Object.entries(state.specFilters)){if(!v)continue;arr=arr.filter(p=>{const specs=parseSpecs(p.specs);return Object.entries(specs).some(([sk,sv])=>commonSpecKey(sk)===k&&sv===v)})}
   if(state.sort==="Цена: по возрастанию")arr.sort((a,b)=>Number(a.price)-Number(b.price));else if(state.sort==="Цена: по убыванию")arr.sort((a,b)=>Number(b.price)-Number(a.price));else if(state.sort==="Популярные")arr.sort((a,b)=>(state.viewCounts[b.id]||0)-(state.viewCounts[a.id]||0));else arr.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));return arr;
 }
-function productCard(p,mini=false){const cover=imgsFor(p.id)[0];const fav=state.favorites.includes(p.id);const sale=validSale(p);return `<article class="product ${mini?"mini-product":""}" data-product-card="${p.id}"><a class="photo" href="${productLink(p.id)}" data-open-product="${p.id}">${cover?`<img src="${publicUrl(cover.image_path)}" alt="${esc(p.name)}" loading="lazy">`:`<span class="no-photo">Q</span>`}<span class="order-tag ${p.availability||"order"}">${esc(availabilityLabel(p.availability||"order"))}</span>${p.badge?`<span class="product-badge badge-${norm(p.badge)}">${esc(p.badge)}</span>`:""}</a><button class="favorite ${fav?"on":""}" data-favorite="${p.id}" aria-label="Избранное">${fav?"♥":"♡"}</button><div class="product-info"><div class="product-category">${esc(catName(p.category_id))}${p.brand?" · "+esc(p.brand):""}</div><a class="product-title" href="${productLink(p.id)}" data-open-product="${p.id}">${esc(p.name)}</a><div class="price-row"><div class="product-price">${esc(priceText(p))}</div>${sale?`<span class="old-price">${money(p.old_price)}</span>`:""}</div><div class="delivery">◷ ${esc(p.delivery||"Срок уточняется")}</div>${priv()?`<div class="private-price">Закуп: ${money(p.cost)}<span>+${money(Number(p.price)-Number(p.cost))}</span></div>`:""}<div class="card-actions"><button class="small-btn" data-customer-add="${p.id}">＋ В корзину</button>${isSeller()?`<button class="small-btn seller-add" data-seller-add="${p.id}">＋ Продавцу</button>`:""}</div></div></article>`}
+function productCard(p,mini=false){const cover=imgsFor(p.id)[0];const fav=state.favorites.includes(p.id);const sale=validSale(p);return `<article class="product ${mini?"mini-product":""}" data-product-card="${p.id}"><a class="photo" href="${productLink(p.id)}" data-open-product="${p.id}">${cover?`<img src="${publicUrl(cover.image_path)}" alt="${esc(p.name)}" loading="lazy">`:`<span class="no-photo">Q</span>`}<span class="order-tag ${p.availability||"order"}">${esc(availabilityLabel(p.availability||"order"))}</span>${p.badge&&!(norm(p.badge)==="акция"&&!validSale(p))?`<span class="product-badge badge-${norm(p.badge)}">${esc(p.badge)}</span>`:""}</a><button class="favorite ${fav?"on":""}" data-favorite="${p.id}" aria-label="Избранное">${fav?"♥":"♡"}</button><div class="product-info"><div class="product-category">${esc(catName(p.category_id))}${p.brand?" · "+esc(p.brand):""}</div><a class="product-title" href="${productLink(p.id)}" data-open-product="${p.id}">${esc(p.name)}</a><div class="price-row"><div class="product-price">${esc(priceText(p))}</div>${sale?`<span class="old-price">${money(p.old_price)}</span>`:""}</div><div class="delivery">◷ ${esc(p.delivery||"Срок уточняется")}</div>${sale&&p.sale_end?`<div class="sale-deadline">${esc(saleInfo(p))}</div>`:""}${priv()?`<div class="private-price">Закуп: ${money(p.cost)}<span>+${money(Number(p.price)-Number(p.cost))}</span></div>`:""}<div class="card-actions"><button class="small-btn" data-customer-add="${p.id}">＋ В корзину</button>${isSeller()?`<button class="small-btn seller-add" data-seller-add="${p.id}">＋ Продавцу</button>`:""}</div></div></article>`}
 function bindProductCards(root=document){root.querySelectorAll("[data-open-product]").forEach(b=>b.onclick=e=>{e.preventDefault();openDetail(b.dataset.openProduct)});root.querySelectorAll("[data-favorite]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(b.dataset.favorite)});root.querySelectorAll("[data-customer-add]").forEach(b=>b.onclick=e=>{e.stopPropagation();addCustomerCart(b.dataset.customerAdd)});root.querySelectorAll("[data-seller-add]").forEach(b=>b.onclick=e=>{e.stopPropagation();addToCart(b.dataset.sellerAdd);toast("Добавлено в корзину продавца")})}
 function renderProducts(){
   const arr=filteredProducts();el.resultCount.textContent=`${arr.length} ${arr.length===1?"товар":"товаров"}`;el.stateBox.classList.toggle("hidden",arr.length>0);el.catalogGrid.classList.toggle("hidden",arr.length===0);if(!arr.length){el.stateBox.innerHTML=`<h2>Ничего не найдено</h2><p>Измени фильтры или напиши нам в WhatsApp — найдём товар под заказ.</p><button class="whatsapp-btn" id="emptyWhatsapp">Написать в WhatsApp</button>`;$("emptyWhatsapp").onclick=()=>openWhatsapp("Здравствуйте! Пришёл с сайта QUATT QURYLYS. Не нашёл нужный товар. Помогите подобрать / заказать.");return}el.catalogGrid.innerHTML=arr.map(p=>productCard(p)).join("");bindProductCards(el.catalogGrid);renderRecent();
@@ -155,7 +159,7 @@ function openDetail(id,pushUrl=true){
   const wa=`Здравствуйте! Пришёл с сайта QUATT QURYLYS. Хочу уточнить наличие / заказать: ${p.name}${p.brand?" ("+p.brand+")":""}.\n${productLink(p.id)}`;
   el.detailContent.innerHTML=`
     ${pics.length?`<div class="detail-photos">${pics.map((i,idx)=>`<button data-lightbox-index="${idx}"><img src="${publicUrl(i.image_path)}" alt="${esc(p.name)}"></button>`).join("")}</div>`:`<div class="detail-placeholder">Q</div>`}
-    <div class="detail-buy-row"><div><div class="detail-price">${esc(priceText(p))}${sale?` <span class="old-price big">${money(p.old_price)}</span>`:""}</div><div class="availability-line">${esc(availabilityLabel(p.availability||"order"))}${p.delivery?` · ${esc(p.delivery)}`:""}</div></div><button id="detailWhatsapp" class="whatsapp-btn">WhatsApp</button></div>
+    <div class="detail-buy-row"><div><div class="detail-price">${esc(priceText(p))}${sale?` <span class="old-price big">${money(p.old_price)}</span>`:""}</div><div class="availability-line">${esc(availabilityLabel(p.availability||"order"))}${p.delivery?` · ${esc(p.delivery)}`:""}</div>${sale&&p.sale_end?`<div class="sale-deadline detail-sale">${esc(saleInfo(p))}</div>`:""}</div><button id="detailWhatsapp" class="whatsapp-btn">WhatsApp</button></div>
     ${p.checked_date?`<p class="fine">Цена проверена: ${new Date(p.checked_date+"T00:00:00").toLocaleDateString("ru-RU")}</p>`:""}
     <section class="detail-section"><h3>Характеристики</h3>${specsHtml(p.specs)}</section>${renderVariants(p)}
     ${videoHtml(p.video_url)}
