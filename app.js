@@ -490,5 +490,50 @@ function setupMobileCatalogUI(){
   sync();
 }
 
-async function init(){setupMobileHeaderUI();setupMobileCatalogUI();setupPriceTagToolbar();loadLocal();const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();await loadData();renderLocalBadges();if(isAdmin()||isProcurement()){refreshOrdersBadge(false);setInterval(()=>refreshOrdersBadge(true),30000)}if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=258").catch(()=>{})}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function createLaunchSplash(){
+  if(document.getElementById('launchSplash')) return;
+  const wrap=document.createElement('div');
+  wrap.id='launchSplash';
+  wrap.className='launch-splash';
+  wrap.innerHTML='
+    <div class="launch-splash__inner">
+      <div class="launch-splash__badge">Q</div>
+      <div class="launch-splash__brand">QUATT QURYLYS</div>
+      <div class="launch-splash__sub">Каталог товаров</div>
+      <div class="launch-splash__dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    </div>';
+  document.body.appendChild(wrap);
+}
+function hideLaunchSplash(){
+  const wrap=document.getElementById('launchSplash');
+  if(!wrap) return;
+  wrap.classList.add('is-hiding');
+  setTimeout(()=>wrap.remove(),420);
+}
+window.addEventListener('offline',()=>toast('Нет подключения к интернету',true));
+window.addEventListener('online',()=>toast('Интернет снова подключен'));
+
+async function init(){
+  createLaunchSplash();
+  setupMobileHeaderUI();
+  setupMobileCatalogUI();
+  setupPriceTagToolbar();
+  loadLocal();
+  const started=Date.now();
+  const {data}=await supabase.auth.getSession();
+  state.session=data.session;
+  await loadRole();
+  await loadData();
+  renderLocalBadges();
+  if(isAdmin()||isProcurement()){
+    refreshOrdersBadge(false);
+    setInterval(()=>refreshOrdersBadge(true),30000)
+  }
+  const waitMore=Math.max(0,800-(Date.now()-started));
+  if(waitMore) await sleep(waitMore);
+  hideLaunchSplash();
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=259").catch(()=>{})
+}
 init();
