@@ -288,3 +288,17 @@ header{height:92px;min-height:92px;padding:13px 24px;gap:16px;border-bottom:1px 
   .launch-splash__brand{font-size:18px}
   .launch-splash__sub{font-size:13px}
 }
+
+
+/* V2.5.10 mobile PWA install prompt */
+.install-app-banner{position:fixed;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:4600;display:none;align-items:center;gap:11px;padding:12px 12px 12px 11px;background:#111;color:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 16px 40px rgba(0,0,0,.28);transform:translateY(24px);opacity:0;transition:transform .24s ease,opacity .24s ease}
+.install-app-banner.show{transform:translateY(0);opacity:1}
+.install-app-icon{flex:0 0 44px;width:44px;height:44px;display:grid;place-items:center;background:#f5c400;color:#111;border-radius:10px;font-size:27px;font-weight:900}
+.install-app-copy{min-width:0;display:flex;flex:1;flex-direction:column;gap:2px}
+.install-app-copy strong{font-size:14px;line-height:1.2}
+.install-app-copy span{font-size:12px;line-height:1.25;color:rgba(255,255,255,.68)}
+.install-app-primary{flex:0 0 auto;border:0;background:#f5c400;color:#111;padding:10px 12px;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer}
+.install-app-close{flex:0 0 auto;width:30px;height:30px;border:0;background:transparent;color:rgba(255,255,255,.65);font-size:24px;line-height:1;cursor:pointer}
+@media (max-width:900px){.install-app-banner{display:flex}}
+@media (max-width:420px){.install-app-banner{left:8px;right:8px;gap:8px;padding:10px}.install-app-icon{width:40px;height:40px;flex-basis:40px;font-size:24px}.install-app-copy span{font-size:11px}.install-app-primary{padding:9px 10px;font-size:12px}}
+@media (display-mode:standalone){.install-app-banner{display:none!important}}

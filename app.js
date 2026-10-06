@@ -512,6 +512,79 @@ function hideLaunchSplash(){
   wrap.classList.add('is-hiding');
   setTimeout(()=>wrap.remove(),420);
 }
+
+let deferredInstallPrompt=null;
+const INSTALL_DISMISS_KEY="quatt-install-dismissed-until";
+
+function isStandaloneApp(){
+  return window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone===true;
+}
+function isMobileDevice(){
+  return window.matchMedia?.("(max-width: 900px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+function installPromptDismissed(){
+  const until=Number(localStorage.getItem(INSTALL_DISMISS_KEY)||0);
+  return Date.now()<until;
+}
+function dismissInstallPrompt(days=7){
+  localStorage.setItem(INSTALL_DISMISS_KEY,String(Date.now()+days*24*60*60*1000));
+  document.getElementById("installAppBanner")?.remove();
+}
+function createInstallBanner(mode="native"){
+  if(!isMobileDevice() || isStandaloneApp() || installPromptDismissed() || document.getElementById("installAppBanner")) return;
+  const box=document.createElement("div");
+  box.id="installAppBanner";
+  box.className="install-app-banner";
+  box.innerHTML=`
+    <div class="install-app-icon">Q</div>
+    <div class="install-app-copy">
+      <strong>Установить QUATT</strong>
+      <span>Открывайте каталог как приложение</span>
+    </div>
+    <button class="install-app-primary" type="button">${mode==="ios"?"Как установить":"Установить"}</button>
+    <button class="install-app-close" type="button" aria-label="Не сейчас">×</button>`;
+  document.body.appendChild(box);
+  requestAnimationFrame(()=>box.classList.add("show"));
+  box.querySelector(".install-app-close").onclick=()=>dismissInstallPrompt(7);
+  box.querySelector(".install-app-primary").onclick=async()=>{
+    if(mode==="ios"){
+      toast("Safari: Поделиться → На экран «Домой»");
+      dismissInstallPrompt(2);
+      return;
+    }
+    if(!deferredInstallPrompt){
+      toast("Откройте меню браузера и выберите «Установить приложение»");
+      return;
+    }
+    deferredInstallPrompt.prompt();
+    const choice=await deferredInstallPrompt.userChoice.catch(()=>null);
+    deferredInstallPrompt=null;
+    if(choice?.outcome==="accepted"){
+      localStorage.removeItem(INSTALL_DISMISS_KEY);
+      box.remove();
+    }else{
+      dismissInstallPrompt(7);
+    }
+  };
+}
+function setupInstallPrompt(){
+  if(!isMobileDevice() || isStandaloneApp()) return;
+  window.addEventListener("beforeinstallprompt",e=>{
+    e.preventDefault();
+    deferredInstallPrompt=e;
+    createInstallBanner("native");
+  });
+  window.addEventListener("appinstalled",()=>{
+    deferredInstallPrompt=null;
+    localStorage.removeItem(INSTALL_DISMISS_KEY);
+    document.getElementById("installAppBanner")?.remove();
+    toast("QUATT установлен");
+  });
+  const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const safari=/Safari/i.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/i.test(navigator.userAgent);
+  if(ios && safari && !installPromptDismissed()) setTimeout(()=>createInstallBanner("ios"),1600);
+}
+
 window.addEventListener('offline',()=>toast('Нет подключения к интернету',true));
 window.addEventListener('online',()=>toast('Интернет снова подключен'));
 
@@ -520,6 +593,7 @@ async function init(){
   setupMobileHeaderUI();
   setupMobileCatalogUI();
   setupPriceTagToolbar();
+  setupInstallPrompt();
   loadLocal();
   const started=Date.now();
   const {data}=await supabase.auth.getSession();
@@ -534,6 +608,6 @@ async function init(){
   const waitMore=Math.max(0,800-(Date.now()-started));
   if(waitMore) await sleep(waitMore);
   hideLaunchSplash();
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=2591").catch(()=>{})
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=2510").catch(()=>{})
 }
 init();
