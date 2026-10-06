@@ -456,7 +456,18 @@ function setupMobileHeaderUI(){
       btn.innerHTML='<span aria-hidden="true">☰</span>';
     }
   });
-  window.addEventListener("resize",()=>{if(window.innerWidth>760)document.body.classList.remove("mobile-nav-open")});
+  const closeMobileNav=()=>{
+    if(window.innerWidth>760||!document.body.classList.contains("mobile-nav-open"))return;
+    document.body.classList.remove("mobile-nav-open");
+    btn.setAttribute("aria-expanded","false");
+    btn.innerHTML='<span aria-hidden="true">☰</span>';
+  };
+  document.addEventListener("pointerdown",e=>{
+    if(window.innerWidth>760||!document.body.classList.contains("mobile-nav-open"))return;
+    if(e.target.closest("#mobileMenuBtn")||e.target.closest(".header-right"))return;
+    closeMobileNav();
+  },true);
+  window.addEventListener("resize",()=>{if(window.innerWidth>760)closeMobileNav()});
 }
 function syncMobileHeaderUI(){
   const btn=document.getElementById("mobileMenuBtn");
