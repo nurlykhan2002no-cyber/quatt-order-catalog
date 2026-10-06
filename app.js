@@ -415,7 +415,7 @@ let priceTagSelection=new Set();
 function loadScriptOnce(src,test){return new Promise((resolve,reject)=>{if(test())return resolve();const old=[...document.scripts].find(x=>x.src===src);if(old){old.addEventListener("load",resolve,{once:true});old.addEventListener("error",reject,{once:true});return}const sc=document.createElement("script");sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error("Не удалось загрузить модуль"));document.head.appendChild(sc)})}
 async function ensurePriceTagLibs(){await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js",()=>!!window.QRCode);await loadScriptOnce("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js",()=>!!window.jspdf?.jsPDF)}
 async function qrDataUrl(text,size=360){await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js",()=>!!window.QRCode);const box=document.createElement("div");box.style.cssText="position:fixed;left:-99999px;top:-99999px";document.body.appendChild(box);new QRCode(box,{text,width:size,height:size,correctLevel:window.QRCode.CorrectLevel.M});await new Promise(r=>setTimeout(r,30));const canvas=box.querySelector("canvas"),img=box.querySelector("img");const out=canvas?.toDataURL("image/png")||img?.src||"";box.remove();return out}
-function priceTagConfig(){const dlg=$("priceTagDialog"),preset=dlg.querySelector("#ptPreset").value;let w=PRICE_TAG_PRESETS[preset]?.w||90,h=PRICE_TAG_PRESETS[preset]?.h||60;if(preset==="custom"){w=Math.max(35,Math.min(190,Number(dlg.querySelector("#ptWidth").value)||90));h=Math.max(25,Math.min(277,Number(dlg.querySelector("#ptHeight").value)||60))}if(dlg.querySelector("#ptOrientation").value==="portrait"&&w>h)[w,h]=[h,w];if(dlg.querySelector("#ptOrientation").value==="landscape"&&h>w)[w,h]=[h,w];return {w,h,bw:dlg.querySelector("#ptBw").checked,qr:dlg.querySelector("#ptQr").checked,copies:Math.max(1,Math.min(50,Number(dlg.querySelector("#ptCopies").value)||1)),gap:2,margin:5}}
+function priceTagConfig(){const dlg=$("priceTagDialog"),preset=dlg.querySelector("#ptPreset").value;let w=PRICE_TAG_PRESETS[preset]?.w||90,h=PRICE_TAG_PRESETS[preset]?.h||60;if(preset==="custom"){w=Math.max(35,Math.min(190,Number(dlg.querySelector("#ptWidth").value)||90));h=Math.max(25,Math.min(277,Number(dlg.querySelector("#ptHeight").value)||60))}if(dlg.querySelector("#ptOrientation").value==="portrait"&&w>h)[w,h]=[h,w];if(dlg.querySelector("#ptOrientation").value==="landscape"&&h>w)[w,h]=[h,w];return {w,h,bw:dlg.querySelector("#ptBw").checked,qr:dlg.querySelector("#ptQr").checked,copies:Math.max(1,Math.min(50,Number(dlg.querySelector("#ptCopies").value)||1)),gap:0,margin:5}}
 function priceTagLayout(cfg){const usableW=210-cfg.margin*2,usableH=297-cfg.margin*2;const cols=Math.max(1,Math.floor((usableW+cfg.gap)/(cfg.w+cfg.gap))),rows=Math.max(1,Math.floor((usableH+cfg.gap)/(cfg.h+cfg.gap)));return {cols,rows,perPage:cols*rows}}
 function wrapCanvasText(ctx,text,maxWidth,maxLines){const words=String(text||"").split(/\s+/),lines=[];let cur="";for(const word of words){const t=cur?cur+" "+word:word;if(ctx.measureText(t).width<=maxWidth)cur=t;else{if(cur)lines.push(cur);cur=word;if(lines.length>=maxLines-1)break}}if(cur&&lines.length<maxLines)lines.push(cur);if(lines.length===maxLines&&words.length){let last=lines[maxLines-1];while(last.length>2&&ctx.measureText(last+"…").width>maxWidth)last=last.slice(0,-1);lines[maxLines-1]=last+"…"}return lines}
 function fitFont(ctx,text,maxWidth,start,min=10){let size=start;while(size>min){ctx.font=`900 ${size}px Arial, sans-serif`;if(ctx.measureText(String(text)).width<=maxWidth)break;size-=1}return size}
@@ -425,7 +425,7 @@ async function buildPriceTagAssets(cfg){const products=expandedPriceTagProducts(
 function priceTagPositions(count,cfg){const lay=priceTagLayout(cfg),pos=[];for(let i=0;i<count;i++){const n=i%lay.perPage,page=Math.floor(i/lay.perPage),row=Math.floor(n/lay.cols),col=n%lay.cols;pos.push({page,x:cfg.margin+col*(cfg.w+cfg.gap),y:cfg.margin+row*(cfg.h+cfg.gap)})}return {positions:pos,...lay,pages:Math.ceil(count/lay.perPage)}}
 async function downloadPriceTagPdf(){try{const dlg=$("priceTagDialog"),cfg=priceTagConfig();dlg.querySelector("#ptBusy").textContent="Готовим PDF…";await ensurePriceTagLibs();const items=await buildPriceTagAssets(cfg),layout=priceTagPositions(items.length,cfg),{jsPDF}=window.jspdf,pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});items.forEach((it,i)=>{const p=layout.positions[i];if(p.page>0&&p.page!==layout.positions[i-1]?.page)pdf.addPage("a4","portrait");pdf.addImage(it.data,"PNG",p.x,p.y,cfg.w,cfg.h,undefined,"FAST")});pdf.save(`QUATT_price_tags_${new Date().toISOString().slice(0,10)}.pdf`);dlg.querySelector("#ptBusy").textContent="PDF скачан";setTimeout(()=>dlg.querySelector("#ptBusy").textContent="",1800)}catch(e){console.error(e);toast(e.message||String(e),true);const b=$("priceTagDialog")?.querySelector("#ptBusy");if(b)b.textContent=""}}
 async function printPriceTags(){try{const dlg=$("priceTagDialog"),cfg=priceTagConfig();dlg.querySelector("#ptBusy").textContent="Готовим печать…";const items=await buildPriceTagAssets(cfg),layout=priceTagPositions(items.length,cfg),pages=Array.from({length:layout.pages},()=>[]);items.forEach((it,i)=>pages[layout.positions[i].page].push({it,pos:layout.positions[i]}));const w=window.open("","_blank");if(!w)throw new Error("Браузер заблокировал окно печати");const html=pages.map((pg,pi)=>`<section class="sheet">${pg.map(({it,pos})=>`<img src="${it.data}" style="left:${pos.x}mm;top:${pos.y}mm;width:${cfg.w}mm;height:${cfg.h}mm">`).join("")}</section>`).join("");w.document.write(`<html><head><title>Ценники QUATT</title><style>@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;background:#fff}.sheet{position:relative;width:210mm;height:297mm;page-break-after:always;overflow:hidden}.sheet:last-child{page-break-after:auto}.sheet img{position:absolute;object-fit:fill}</style></head><body>${html}<script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`);w.document.close();dlg.querySelector("#ptBusy").textContent=""}catch(e){console.error(e);toast(e.message||String(e),true);const b=$("priceTagDialog")?.querySelector("#ptBusy");if(b)b.textContent=""}}
-function priceTagPreview(){const dlg=$("priceTagDialog");if(!dlg)return;const cfg=priceTagConfig(),lay=priceTagLayout(cfg),count=expandedPriceTagProducts(cfg).length;dlg.querySelector("#ptSheetInfo").textContent=`Размер ${Math.round(cfg.w)}×${Math.round(cfg.h)} мм · ${lay.perPage} шт. на A4 · страниц: ${Math.max(1,Math.ceil(count/lay.perPage))}`;const custom=dlg.querySelector("#ptCustomSize");custom.classList.toggle("hidden",dlg.querySelector("#ptPreset").value!=="custom");const first=state.products.find(p=>priceTagSelection.has(p.id));const box=dlg.querySelector("#ptPreview");if(!first){box.innerHTML="<span>Выберите товар</span>";return}box.innerHTML=`<div class="pt-mini-tag ${cfg.bw?"bw":""}"><div class="pt-mini-logo"><b>QUATT</b> QURYLYS</div><div class="pt-mini-name">${esc(first.name)}</div><div class="pt-mini-price">${esc(priceText(first))}</div>${cfg.qr?'<div class="pt-mini-qr">QR</div>':''}<small>Нұрсая 17 · 09:00–21:00</small></div>`}
+function priceTagPreview(){const dlg=$("priceTagDialog");if(!dlg)return;const cfg=priceTagConfig(),lay=priceTagLayout(cfg),count=expandedPriceTagProducts(cfg).length;dlg.querySelector("#ptSheetInfo").textContent=`Размер ${Math.round(cfg.w)}×${Math.round(cfg.h)} мм · без зазоров между ценниками · ${lay.perPage} шт. на A4 · страниц: ${Math.max(1,Math.ceil(count/lay.perPage))}`;const custom=dlg.querySelector("#ptCustomSize");custom.classList.toggle("hidden",dlg.querySelector("#ptPreset").value!=="custom");const first=state.products.find(p=>priceTagSelection.has(p.id));const box=dlg.querySelector("#ptPreview");if(!first){box.innerHTML="<span>Выберите товар</span>";return}box.innerHTML=`<div class="pt-mini-tag ${cfg.bw?"bw":""}"><div class="pt-mini-logo"><b>QUATT</b> QURYLYS</div><div class="pt-mini-name">${esc(first.name)}</div><div class="pt-mini-price">${esc(priceText(first))}</div>${cfg.qr?'<div class="pt-mini-qr">QR</div>':''}<small>Нұрсая 17 · 09:00–21:00</small></div>`}
 function renderPriceTagProducts(){const dlg=$("priceTagDialog"),q=norm(dlg.querySelector("#ptSearch").value),list=dlg.querySelector("#ptProducts");const rows=state.products.filter(p=>!q||norm([p.name,p.brand,catName(p.category_id)].join(" ")).includes(q)).slice(0,250);list.innerHTML=rows.map(p=>`<label class="pt-product-row"><input type="checkbox" value="${p.id}" ${priceTagSelection.has(p.id)?"checked":""}><span><b>${esc(p.name)}</b><small>${esc(catName(p.category_id))}${p.brand?" · "+esc(p.brand):""}</small></span><strong>${esc(priceText(p))}</strong></label>`).join("")||'<p class="fine">Ничего не найдено</p>';list.querySelectorAll("input[type=checkbox]").forEach(ch=>ch.onchange=()=>{if(ch.checked)priceTagSelection.add(ch.value);else priceTagSelection.delete(ch.value);dlg.querySelector("#ptSelectedCount").textContent=priceTagSelection.size;priceTagPreview()})}
 function ensurePriceTagStudio(){if($("priceTagDialog"))return;const d=document.createElement("dialog");d.id="priceTagDialog";d.className="price-tag-dialog";d.innerHTML=`<div class="pt-shell"><div class="pt-head"><div><h2>Ценники</h2><p>Печать и PDF для другого компьютера</p></div><button type="button" class="pt-close">×</button></div><div class="pt-grid"><section class="pt-left"><div class="pt-toolbar"><input id="ptSearch" type="search" placeholder="Найти товар…"><button id="ptSelectVisible" type="button">Выбрать найденные</button><button id="ptClearSelection" type="button">Снять выбор</button></div><div class="pt-selected">Выбрано: <b id="ptSelectedCount">0</b></div><div id="ptProducts" class="pt-products"></div></section><section class="pt-right"><label>Шаблон<select id="ptPreset">${Object.entries(PRICE_TAG_PRESETS).map(([k,v])=>`<option value="${k}" ${k==="90x60"?"selected":""}>${v.label}</option>`).join("")}</select></label><div id="ptCustomSize" class="pt-size-row hidden"><label>Ширина, мм<input id="ptWidth" type="number" min="35" max="190" step="1" value="90"></label><label>Высота, мм<input id="ptHeight" type="number" min="25" max="277" step="1" value="60"></label></div><label>Ориентация<select id="ptOrientation"><option value="landscape">Горизонтальная</option><option value="portrait">Вертикальная</option></select></label><label>Копий каждого товара<input id="ptCopies" type="number" min="1" max="50" step="1" value="1"></label><label class="pt-check"><input id="ptQr" type="checkbox" checked> Показывать QR-код</label><label class="pt-check"><input id="ptBw" type="checkbox"> Чёрно-белая печать</label><div id="ptSheetInfo" class="pt-sheet-info"></div><div id="ptPreview" class="pt-preview"></div><div id="ptBusy" class="pt-busy"></div><div class="pt-actions"><button id="ptDownloadPdf" type="button" class="primary">Скачать PDF</button><button id="ptPrint" type="button">Печатать</button></div></section></div></div>`;document.body.appendChild(d);d.querySelector(".pt-close").onclick=()=>d.close();d.addEventListener("click",e=>{if(e.target===d)d.close()});d.querySelector("#ptSearch").oninput=renderPriceTagProducts;d.querySelector("#ptSelectVisible").onclick=()=>{d.querySelectorAll("#ptProducts input[type=checkbox]").forEach(ch=>{ch.checked=true;priceTagSelection.add(ch.value)});d.querySelector("#ptSelectedCount").textContent=priceTagSelection.size;priceTagPreview()};d.querySelector("#ptClearSelection").onclick=()=>{priceTagSelection.clear();renderPriceTagProducts();d.querySelector("#ptSelectedCount").textContent=0;priceTagPreview()};["ptPreset","ptOrientation","ptCopies","ptQr","ptBw","ptWidth","ptHeight"].forEach(id=>d.querySelector("#"+id).addEventListener("input",priceTagPreview));d.querySelector("#ptDownloadPdf").onclick=downloadPriceTagPdf;d.querySelector("#ptPrint").onclick=printPriceTags}
 function openPriceTagStudio(ids=[]){if(!canEditProducts())return;ensurePriceTagStudio();priceTagSelection=new Set((ids||[]).filter(Boolean));const d=$("priceTagDialog");d.querySelector("#ptSearch").value="";d.querySelector("#ptSelectedCount").textContent=priceTagSelection.size;renderPriceTagProducts();priceTagPreview();d.showModal()}
@@ -541,6 +541,42 @@ function dismissInstallPrompt(days=7){
   localStorage.setItem(INSTALL_DISMISS_KEY,String(Date.now()+days*24*60*60*1000));
   document.getElementById("installAppBanner")?.remove();
 }
+function installActionLabel(mode="native"){
+  return mode==="ios"?"Как установить":"Скачать приложение";
+}
+function ensureInstallBottomButton(mode="native"){
+  if(!isMobileDevice() || isStandaloneApp()) return;
+  let btn=document.getElementById("installAppDock");
+  if(!btn){
+    btn=document.createElement("button");
+    btn.id="installAppDock";
+    btn.className="install-app-dock";
+    btn.type="button";
+    document.body.appendChild(btn);
+  }
+  btn.textContent=installActionLabel(mode);
+  btn.onclick=async()=>{
+    if(mode==="ios"){
+      toast("Safari: Поделиться → На экран «Домой»");
+      return;
+    }
+    if(deferredInstallPrompt){
+      deferredInstallPrompt.prompt();
+      const choice=await deferredInstallPrompt.userChoice.catch(()=>null);
+      deferredInstallPrompt=null;
+      if(choice?.outcome==="accepted"){
+        localStorage.removeItem(INSTALL_DISMISS_KEY);
+        document.getElementById("installAppBanner")?.remove();
+        btn.remove();
+      }
+      return;
+    }
+    toast("Откройте меню браузера и выберите «Установить приложение»");
+  };
+}
+function removeInstallBottomButton(){
+  document.getElementById("installAppDock")?.remove();
+}
 function createInstallBanner(mode="native"){
   if(!isMobileDevice() || isStandaloneApp() || installPromptDismissed() || document.getElementById("installAppBanner")) return;
   const box=document.createElement("div");
@@ -555,6 +591,7 @@ function createInstallBanner(mode="native"){
     <button class="install-app-primary" type="button">${mode==="ios"?"Как установить":"Установить"}</button>
     <button class="install-app-close" type="button" aria-label="Не сейчас">×</button>`;
   document.body.appendChild(box);
+  ensureInstallBottomButton(mode);
   requestAnimationFrame(()=>box.classList.add("show"));
   box.querySelector(".install-app-close").onclick=()=>dismissInstallPrompt(7);
   box.querySelector(".install-app-primary").onclick=async()=>{
@@ -573,6 +610,7 @@ function createInstallBanner(mode="native"){
     if(choice?.outcome==="accepted"){
       localStorage.removeItem(INSTALL_DISMISS_KEY);
       box.remove();
+      removeInstallBottomButton();
     }else{
       dismissInstallPrompt(7);
     }
@@ -583,17 +621,24 @@ function setupInstallPrompt(){
   window.addEventListener("beforeinstallprompt",e=>{
     e.preventDefault();
     deferredInstallPrompt=e;
+    ensureInstallBottomButton("native");
     createInstallBanner("native");
   });
   window.addEventListener("appinstalled",()=>{
     deferredInstallPrompt=null;
     localStorage.removeItem(INSTALL_DISMISS_KEY);
     document.getElementById("installAppBanner")?.remove();
+    removeInstallBottomButton();
     toast("QUATT установлен");
   });
   const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
   const safari=/Safari/i.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/i.test(navigator.userAgent);
-  if(ios && safari && !installPromptDismissed()) setTimeout(()=>createInstallBanner("ios"),1600);
+  if(ios && safari && !installPromptDismissed()) {
+    setTimeout(()=>createInstallBanner("ios"),1600);
+    setTimeout(()=>ensureInstallBottomButton("ios"),500);
+  } else {
+    setTimeout(()=>ensureInstallBottomButton("native"),900);
+  }
 }
 
 window.addEventListener('offline',()=>toast('Нет подключения к интернету',true));

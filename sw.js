@@ -1,8 +1,8 @@
-const CACHE="quatt-catalog-v2.5.12-icon.1";
+const CACHE="quatt-catalog-v2.5.13.1";
 const OFFLINE_URL="./offline.html";
 const ASSETS=[
   "./","./index.html","./styles.css","./app.js","./config.js",
-  "./manifest.webmanifest","./favicon.svg","./quatt-icon-192.png","./quatt-icon-512.png",
+  "./manifest.webmanifest","./favicon.svg","./icon-192.png","./icon-512.png",
   "./quatt.gif","./robots.txt","./sitemap.xml",OFFLINE_URL
 ];
 self.addEventListener("install",e=>{

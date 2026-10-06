@@ -302,3 +302,9 @@ header{height:92px;min-height:92px;padding:13px 24px;gap:16px;border-bottom:1px 
 @media (max-width:900px){.install-app-banner{display:flex}}
 @media (max-width:420px){.install-app-banner{left:8px;right:8px;gap:8px;padding:10px}.install-app-icon{width:40px;height:40px;flex-basis:40px;font-size:24px}.install-app-copy span{font-size:11px}.install-app-primary{padding:9px 10px;font-size:12px}}
 @media (display-mode:standalone){.install-app-banner{display:none!important}}
+
+.install-app-dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:4550;display:none;align-items:center;justify-content:center;min-height:46px;padding:0 18px;border:0;border-radius:999px;background:#f5c400;color:#111;font-weight:800;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,.24);cursor:pointer}
+@media (max-width:900px){.install-app-dock{display:flex}}
+@media (display-mode:standalone){.install-app-dock{display:none!important}}
+body:has(#installAppBanner) .install-app-dock{bottom:calc(86px + env(safe-area-inset-bottom))}
+@media (max-width:420px){.install-app-dock{left:10px;right:10px;transform:none;width:auto}}
