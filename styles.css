@@ -243,3 +243,28 @@ header{height:92px;min-height:92px;padding:13px 24px;gap:16px;border-bottom:1px 
   .product-price{font-size:20px!important}
   .card-actions{grid-template-columns:1fr!important}
 }
+
+/* ===== V2.5.8 — Price tag studio ===== */
+#priceTagsBtn{border-radius:4px!important}
+.price-tag-dialog{width:min(1120px,calc(100vw - 24px));max-width:none;max-height:92dvh;padding:0;border:0;border-radius:10px;background:#fff;color:#111}
+.price-tag-dialog::backdrop{background:rgba(0,0,0,.55)}
+.pt-shell{display:flex;flex-direction:column;max-height:92dvh;overflow:hidden}
+.pt-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:20px 22px 16px;border-bottom:1px solid #ddd}
+.pt-head h2{margin:0;font-size:24px}.pt-head p{margin:4px 0 0;color:#777}
+.pt-close{width:38px;height:38px;border:0;background:#eee;font-size:25px;line-height:1;border-radius:4px;cursor:pointer}
+.pt-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(330px,.75fr);min-height:0;flex:1}
+.pt-left{display:flex;flex-direction:column;min-height:0;padding:16px 18px;border-right:1px solid #e2e2e2}
+.pt-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
+.pt-toolbar input,.pt-right input,.pt-right select{min-height:42px;border:1px solid #cfcfcf;border-radius:4px;background:#fff;padding:8px 10px;font:inherit}
+.pt-toolbar button,.pt-actions button{min-height:42px;border:1px solid #bbb;border-radius:4px;background:#fff;padding:8px 12px;font:inherit;cursor:pointer}
+.pt-selected{padding:10px 2px;color:#666;font-size:14px}
+.pt-products{overflow:auto;border-top:1px solid #eee}
+.pt-product-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid #eee;cursor:pointer}
+.pt-product-row input{width:18px;height:18px}.pt-product-row span{min-width:0}.pt-product-row b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pt-product-row small{display:block;margin-top:3px;color:#888}.pt-product-row strong{white-space:nowrap}
+.pt-right{overflow:auto;padding:18px 20px}.pt-right>label{display:grid;gap:6px;margin-bottom:13px;font-weight:600}.pt-right label input,.pt-right label select{font-weight:400}
+.pt-size-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pt-size-row label{display:grid;gap:6px;font-weight:600}
+.pt-check{display:flex!important;grid-template-columns:none!important;align-items:center;gap:9px!important;font-weight:500!important}.pt-check input{min-height:auto;width:18px;height:18px}
+.pt-sheet-info{padding:10px 12px;background:#f4f4f4;border-left:3px solid #f2e500;margin:4px 0 12px;font-size:14px}
+.pt-preview{display:flex;align-items:center;justify-content:center;min-height:180px;padding:16px;background:#ececec;border:1px solid #ddd;overflow:hidden}
+.pt-mini-tag{position:relative;width:min(100%,420px);aspect-ratio:3/2;background:#fff;border:2px solid #111;padding:14px;box-shadow:0 1px 4px #0001}.pt-mini-logo{font-weight:900}.pt-mini-logo b{color:#e6d900;margin-right:8px}.pt-mini-tag.bw .pt-mini-logo b{color:#111}.pt-mini-name{margin-top:14px;font-weight:700}.pt-mini-price{margin-top:18px;font-size:34px;font-weight:900;max-width:70%}.pt-mini-qr{position:absolute;right:14px;bottom:20px;width:70px;height:70px;border:5px solid #111;display:grid;place-items:center;font-weight:900}.pt-mini-tag small{position:absolute;left:14px;bottom:12px;color:#555}.pt-busy{min-height:22px;padding-top:8px;color:#666;font-size:13px}.pt-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}.pt-actions .primary{background:#f2e500;border-color:#f2e500;color:#111;font-weight:800}
+@media(max-width:760px){.price-tag-dialog{width:calc(100vw - 12px);max-height:96dvh}.pt-shell{max-height:96dvh}.pt-head{padding:14px}.pt-head h2{font-size:21px}.pt-grid{grid-template-columns:1fr;overflow:auto}.pt-left{border-right:0;border-bottom:1px solid #ddd;min-height:380px;max-height:52dvh;padding:12px}.pt-toolbar{grid-template-columns:1fr 1fr}.pt-toolbar input{grid-column:1/-1}.pt-right{padding:14px;overflow:visible}.pt-preview{min-height:150px}.pt-actions{position:sticky;bottom:0;background:#fff;padding-top:8px}.pt-product-row{grid-template-columns:auto minmax(0,1fr)}.pt-product-row strong{grid-column:2}.pt-size-row{grid-template-columns:1fr 1fr}}
