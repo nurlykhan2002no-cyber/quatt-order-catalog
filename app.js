@@ -103,9 +103,11 @@ function renderAuth(){
   el.sellerPickerWrap.classList.toggle("hidden",!sellerView||clientView);
   if(sellerView){const active=state.sellerNames.filter(x=>x.active!==false);el.sellerPicker.innerHTML=active.length?active.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join(""):`<option value="">Нет имён</option>`;el.sellerPicker.value=state.selectedSellerId||"";el.sellerPicker.disabled=!active.length}
   el.customerModeBtn.textContent=clientView?"◉ Выйти из режима":"◉ Клиент";
+  document.body.classList.toggle("guest-mode",!state.session);
   document.body.classList.toggle("customer-mode",clientView);
   document.body.classList.toggle("seller-mode",sellerView&&!clientView);
-  document.body.classList.toggle("internal-mode",internal&&!sellerView&&!clientView);
+  document.body.classList.toggle("internal-mode",!!state.session&&internal&&!sellerView&&!clientView);
+  syncMobileHeaderUI();
   renderLocalBadges();
 }
 
@@ -397,6 +399,45 @@ el.roleModeBtn.onclick=()=>{if(!isAdmin())return;state.customerMode=false;state.
 el.favoritesBtn.onclick=()=>{renderFavorites();el.favoritesDialog.showModal()};el.customerCartBtn.onclick=()=>{renderCustomerCart();el.customerCartDialog.showModal()};el.sendCustomerCartBtn.onclick=sendCustomerCart;el.contactsBtn.onclick=()=>el.contactsDialog.showModal();el.contactWhatsappBtn.onclick=()=>openWhatsapp();el.footerWhatsappBtn.onclick=()=>openWhatsapp();el.helpWhatsappBtn.onclick=()=>openWhatsapp("Здравствуйте! Пришёл с сайта QUATT QURYLYS. Не нашёл нужный товар. Помогите подобрать / заказать.");el.notFoundBtn.onclick=()=>el.helpWhatsappBtn.click();el.recentBtn.onclick=()=>{el.recentSection.classList.remove("hidden");el.recentSection.scrollIntoView({behavior:"smooth"})};el.clearRecentBtn.onclick=()=>{state.recent=[];saveLocal();renderRecent()};el.dashboardBtn.onclick=()=>openDashboard(false);el.bulkBtn.onclick=openBulk;
 
 
+function setupMobileHeaderUI(){
+  const header=document.querySelector("header");
+  if(!header||document.getElementById("mobileMenuBtn"))return;
+  const btn=document.createElement("button");
+  btn.id="mobileMenuBtn";
+  btn.type="button";
+  btn.className="mobile-menu-btn hidden";
+  btn.setAttribute("aria-label","Открыть меню");
+  btn.setAttribute("aria-expanded","false");
+  btn.innerHTML='<span aria-hidden="true">☰</span>';
+  header.appendChild(btn);
+  btn.addEventListener("click",()=>{
+    const open=!document.body.classList.contains("mobile-nav-open");
+    document.body.classList.toggle("mobile-nav-open",open);
+    btn.setAttribute("aria-expanded",open?"true":"false");
+    btn.innerHTML=open?'<span aria-hidden="true">×</span>':'<span aria-hidden="true">☰</span>';
+  });
+  document.querySelector(".header-right")?.addEventListener("click",e=>{
+    if(window.innerWidth>760)return;
+    if(e.target.closest("button")){
+      document.body.classList.remove("mobile-nav-open");
+      btn.setAttribute("aria-expanded","false");
+      btn.innerHTML='<span aria-hidden="true">☰</span>';
+    }
+  });
+  window.addEventListener("resize",()=>{if(window.innerWidth>760)document.body.classList.remove("mobile-nav-open")});
+}
+function syncMobileHeaderUI(){
+  const btn=document.getElementById("mobileMenuBtn");
+  if(!btn)return;
+  const logged=!!state.session;
+  btn.classList.toggle("hidden",!logged);
+  if(!logged){
+    document.body.classList.remove("mobile-nav-open");
+    btn.setAttribute("aria-expanded","false");
+    btn.innerHTML='<span aria-hidden="true">☰</span>';
+  }
+}
+
 function setupMobileCatalogUI(){
   const filters=document.querySelector(".filters");
   const searchWrap=document.querySelector(".search-wrap");
@@ -417,5 +458,5 @@ function setupMobileCatalogUI(){
   sync();
 }
 
-async function init(){setupMobileCatalogUI();loadLocal();const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();await loadData();renderLocalBadges();if(isAdmin()||isProcurement()){refreshOrdersBadge(false);setInterval(()=>refreshOrdersBadge(true),30000)}if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=256").catch(()=>{})}
+async function init(){setupMobileHeaderUI();setupMobileCatalogUI();loadLocal();const {data}=await supabase.auth.getSession();state.session=data.session;await loadRole();await loadData();renderLocalBadges();if(isAdmin()||isProcurement()){refreshOrdersBadge(false);setInterval(()=>refreshOrdersBadge(true),30000)}if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=257").catch(()=>{})}
 init();
