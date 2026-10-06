@@ -1,4 +1,4 @@
-const CACHE="quatt-catalog-v2.5.9";
+const CACHE="quatt-catalog-v2.5.9.1";
 const OFFLINE_URL="./offline.html";
 const ASSETS=[
   "./","./index.html","./styles.css","./app.js","./config.js",
