@@ -308,3 +308,18 @@ header{height:92px;min-height:92px;padding:13px 24px;gap:16px;border-bottom:1px 
 @media (display-mode:standalone){.install-app-dock{display:none!important}}
 body:has(#installAppBanner) .install-app-dock{bottom:calc(86px + env(safe-area-inset-bottom))}
 @media (max-width:420px){.install-app-dock{left:10px;right:10px;transform:none;width:auto}}
+
+/* V2.6 language switch + price-tag header polish */
+.lang-switch{display:flex;align-items:center;gap:5px;height:38px;padding:0 8px;border:1px solid #343434;background:#050505;color:#777;border-radius:3px;flex:0 0 auto}
+.lang-switch button{border:0;background:transparent;color:#8e8e8e;font:800 12px/1 Arial,sans-serif;padding:5px 3px;cursor:pointer}
+.lang-switch button.active{color:var(--yellow)}
+.lang-switch span{color:#444;font-size:11px}
+.price-tags-btn{background:#090909!important;border-color:#454545!important;color:#fff!important;position:relative}
+.price-tags-btn::before{content:"▱";color:var(--yellow);font-size:15px;line-height:1}
+.price-tags-btn:hover,.price-tags-btn:focus{border-color:var(--yellow)!important;background:#111!important}
+@media(max-width:760px){
+  body.mobile-nav-open:not(.guest-mode) .header-right .lang-switch:not(.hidden){display:flex!important;flex-direction:row!important;justify-content:flex-start!important;gap:8px!important;height:46px!important;border:0!important;border-bottom:1px solid #252525!important;border-radius:0!important;background:transparent!important;padding:0 6px!important}
+  body.mobile-nav-open:not(.guest-mode) .header-right .lang-switch button{font-size:14px!important;padding:7px 5px!important}
+  .guest-mode .header-right #langSwitch:not(.hidden){display:flex!important;width:auto!important;height:40px!important;margin-right:6px!important;padding:0 7px!important;border:1px solid #343434!important;background:#050505!important}
+  .guest-mode .header-right{gap:6px!important}
+}
