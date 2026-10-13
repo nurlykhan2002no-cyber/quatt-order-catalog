@@ -306,7 +306,49 @@ async function cropImageFile(file){
 }
 el.photoInput.removeAttribute("capture");
 el.photoInput.setAttribute("accept","image/*");
-el.photoInput.onchange=async()=>{const files=[...el.photoInput.files||[]];el.photoInput.value="";if(state.formImages.length+files.length>5){toast("Можно добавить до 5 фото",true);return}for(const f of files){try{toast("Обрабатываем фото…");const safe=await decodeImageSafely(f);const cropped=await cropImageFile(safe);if(!cropped)continue;state.formImages.push({file:cropped,preview:URL.createObjectURL(cropped)})}catch(e){console.error(e);toast(e.message||"Не удалось обработать фото",true)}}renderFormImages()};
+async function addPhotoFiles(files,{fromClipboard=false}={}){
+  const list=[...(files||[])].filter(Boolean);
+  if(!list.length){if(fromClipboard)toast("В буфере нет изображения",true);return}
+  const free=Math.max(0,5-state.formImages.length);
+  if(free<=0){toast("Можно добавить до 5 фото",true);return}
+  if(list.length>free)toast(`Добавим только ${free} фото из ${list.length}`,true);
+  for(const original of list.slice(0,free)){
+    try{
+      const f=original instanceof File?original:new File([original],`clipboard-${Date.now()}.png`,{type:original.type||"image/png"});
+      toast(fromClipboard?"Вставляем изображение…":"Обрабатываем фото…");
+      const safe=await decodeImageSafely(f);
+      const cropped=await cropImageFile(safe);
+      if(!cropped)continue;
+      state.formImages.push({file:cropped,preview:URL.createObjectURL(cropped)});
+    }catch(e){console.error(e);toast(e.message||"Не удалось обработать фото",true)}
+  }
+  renderFormImages();
+}
+el.photoInput.onchange=async()=>{const files=[...el.photoInput.files||[]];el.photoInput.value="";await addPhotoFiles(files)};
+async function pasteImageFromClipboard(){
+  if(!navigator.clipboard?.read){toast("Нажмите Ctrl+V — браузер не даёт прочитать буфер кнопкой",true);return}
+  try{
+    const items=await navigator.clipboard.read();
+    const files=[];
+    for(const item of items){
+      const type=item.types.find(t=>t.startsWith("image/"));
+      if(!type)continue;
+      const blob=await item.getType(type);
+      files.push(new File([blob],`clipboard-${Date.now()}-${files.length+1}.${type.split("/")[1]||"png"}`,{type}));
+    }
+    await addPhotoFiles(files,{fromClipboard:true});
+  }catch(e){console.warn(e);toast("Не удалось прочитать буфер. Нажмите Ctrl+V",true)}
+}
+const pasteImageBtn=document.getElementById("pasteImageBtn");
+if(pasteImageBtn)pasteImageBtn.onclick=pasteImageFromClipboard;
+document.addEventListener("paste",async e=>{
+  if(!el.productDialog?.open||document.querySelector(".crop-dialog[open]"))return;
+  const items=[...(e.clipboardData?.items||[])];
+  const files=items.filter(i=>i.kind==="file"&&String(i.type||"").startsWith("image/")).map(i=>i.getAsFile()).filter(Boolean);
+  if(!files.length)return;
+  e.preventDefault();
+  await addPhotoFiles(files,{fromClipboard:true});
+});
 async function uploadNewImages(productId){let order=0;const kept=[];for(const item of state.formImages){if(item.id){const upd=await supabase.from("product_images").update({sort_order:order}).eq("id",item.id);if(upd.error)throw upd.error;kept.push({...item,sort_order:order});order++;continue}const path=`${productId}/${crypto.randomUUID()}.webp`;const up=await supabase.storage.from(STORAGE_BUCKET).upload(path,item.file,{cacheControl:"3600",upsert:false,contentType:"image/webp"});if(up.error)throw up.error;const ins=await supabase.from("product_images").insert({product_id:productId,image_path:path,sort_order:order}).select().single();if(ins.error)throw ins.error;kept.push(ins.data);order++}return kept}
 async function syncRemovedImages(productId){const before=imgsFor(productId),keptIds=new Set(state.formImages.filter(i=>i.id).map(i=>i.id));const removed=before.filter(i=>!keptIds.has(i.id));if(!removed.length)return;await supabase.storage.from(STORAGE_BUCKET).remove(removed.map(i=>i.image_path));for(const i of removed){const r=await supabase.from("product_images").delete().eq("id",i.id);if(r.error)throw r.error}}
 function findDuplicate(name,brand,id){const n=norm(name),b=norm(brand);return state.products.find(p=>p.id!==id&&norm(p.name)===n&&(!b||norm(p.brand)===b))}
@@ -751,6 +793,6 @@ async function init(){
   const waitMore=Math.max(0,800-(Date.now()-started));
   if(waitMore) await sleep(waitMore);
   hideLaunchSplash();
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=28").catch(()=>{})
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=281").catch(()=>{})
 }
 init();

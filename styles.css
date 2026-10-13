@@ -371,3 +371,10 @@ body:has(#installAppBanner) .install-app-dock{bottom:calc(86px + env(safe-area-i
 
 .detail-internal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 @media (max-width:760px){body.internal-mode .back-to-top{bottom:74px}}
+
+/* V2.8.1 clipboard photo paste */
+.upload-actions{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px}
+.upload-actions button{border:1px solid #d8d8d8;background:#fff;color:#111;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
+.upload-actions button:hover{border-color:#111}
+.upload-actions small{color:#888}
+@media(max-width:760px){.upload-actions{flex-direction:column;gap:5px}.upload-actions button{width:100%;max-width:260px}}
