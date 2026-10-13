@@ -9,8 +9,8 @@
   <meta property="og:description" content="Строительные товары QUATT QURYLYS · Нұрсая 17 · Атырау · 09:00–21:00">
   <meta property="og:type" content="website">
   <title>QUATT QURYLYS — Каталог товаров</title>
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.svg?v=27" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest?v=27">
   <link rel="stylesheet" href="./styles.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 </head>
@@ -140,8 +140,8 @@
     <input id="productId" type="hidden">
     <div class="upload-box">
       <span class="camera" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.5 4 16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1.5-2h5Z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>
-      <b>Добавить фотографии</b><span>До 5 фото · до 20 МБ каждое · сайт сам уменьшит большие фото</span>
-      <input id="photoInput" type="file" multiple accept="image/jpeg,image/png,image/webp" capture="environment">
+      <b>Добавить фотографии</b><span>До 5 фото · до 20 МБ каждое · выберите из галереи или камеры · перед загрузкой можно обрезать</span>
+      <input id="photoInput" type="file" multiple accept="image/*">
     </div>
     <div id="photoThumbs" class="thumbs"></div>
 
@@ -152,6 +152,7 @@
       <label>Розничная цена, ₸ *<input id="fPrice" type="number" min="0" step="100" required></label>
       <label>Как показывать цену<select id="fPriceMode" class="choice"><option value="show">Обычная цена</option><option value="from">Цена от</option><option value="ask">Уточнить цену</option></select></label>
       <label>Наличие<select id="fAvailability" class="choice"><option value="order">Под заказ</option><option value="in_stock">В наличии</option><option value="out_of_stock">Нет в наличии</option></select></label>
+      <label>Остаток, шт.<input id="fStockQty" type="number" min="0" step="1" placeholder="Например, 12"></label>
       <label>Метка<select id="fBadge" class="choice"><option value="">Без метки</option><option>Хит</option><option>Новинка</option><option>Акция</option><option>Рекомендуем</option></select><span id="badgePreview" class="badge-preview"></span></label>
       <label>Срок поставки<input id="fDelivery" value="1 день"></label>
       <label>Старая цена, ₸<input id="fOldPrice" type="number" min="0" step="100"></label>
@@ -174,7 +175,7 @@
     <div class="markup"><span>Наценка:</span><button type="button" data-markup="20">+20%</button><button type="button" data-markup="25">+25%</button><button type="button" data-markup="30">+30%</button><button type="button" data-markup="50">+50%</button><button type="button" data-markup="75">+75%</button><button type="button" data-markup="100">+100%</button><div class="manual-markup"><label>Своя, %</label><input id="manualMarkup" type="number" min="0" step="0.1"><button id="applyManualMarkup" type="button">Применить</button></div><span id="marginInfo">Маржа: 0 ₸</span></div></section>
 
     <label class="switch-row"><input id="fActive" class="switch-input" type="checkbox" checked><span class="switch-ui"></span><span>Показывать в каталоге</span></label>
-    <div class="form-actions"><button id="productHistoryBtn" class="small-btn hidden" type="button">История изменений</button><button id="deleteProductBtn" class="danger hidden" type="button">Удалить</button><span class="spacer"></span><button class="primary" type="submit">✓ Сохранить товар</button></div>
+    <div class="form-actions"><button id="productHistoryBtn" class="small-btn hidden" type="button">История изменений</button><button id="priceHistoryBtn" class="small-btn hidden" type="button">История цен</button><button id="archiveProductBtn" class="small-btn hidden" type="button">В архив</button><button id="deleteProductBtn" class="danger hidden" type="button">Удалить</button><span class="spacer"></span><button class="primary" type="submit">✓ Сохранить товар</button></div>
   </form></dialog>
 
   <dialog id="manageDialog"><div class="modal-card manage-modal">
@@ -187,7 +188,7 @@
   </div></dialog>
 
 
-  <dialog id="productHistoryDialog"><div class="modal-card medium"><div class="modal-head"><div><h2>История изменений товара</h2><p id="productHistorySub">Кто, когда и что менял.</p></div><button type="button" class="close" data-close="productHistoryDialog">×</button></div><div id="productHistoryList"></div></div></dialog>
+  <dialog id="productHistoryDialog"><div class="modal-card medium"><div class="modal-head"><div><h2 id="productHistoryTitle">История изменений товара</h2><p id="productHistorySub">Кто, когда и что менял.</p></div><button type="button" class="close" data-close="productHistoryDialog">×</button></div><div id="productHistoryList"></div></div></dialog>
 
   <dialog id="cartDialog"><div class="modal-card medium"><div class="modal-head"><div><h2>Корзина продавца</h2><p>Заказ от выбранного продавца.</p></div><button type="button" class="close-btn" data-close="cartDialog">×</button></div><div id="cartItems"></div><div id="cartTotal" class="cart-total"></div><button id="checkoutBtn" class="primary-btn wide">Оформить под заказ</button></div></dialog>
   <dialog id="checkoutDialog"><form id="checkoutForm" class="modal-card small"><div class="modal-head"><div><h2>Оформить заказ</h2><p>После сохранения заказ увидит администратор.</p></div><button type="button" class="close-btn" data-close="checkoutDialog">×</button></div><label>Имя клиента<input id="clientName" required></label><label>Телефон<input id="clientPhone"></label><label>Комментарий<textarea id="orderNote" rows="3"></textarea></label><label>Статус<select id="initialStatus"><option value="interest">Клиент интересуется</option><option value="paid">Оплачено</option></select></label><button class="primary-btn wide" type="submit">Создать заказ</button></form></dialog>
@@ -201,6 +202,6 @@
 
   <dialog id="bulkDialog"><div class="modal-card bulk-modal"><div class="modal-head"><div><h2>Массовое редактирование</h2><p>Выберите товары и примените действие.</p></div><button type="button" class="close" data-close="bulkDialog">×</button></div><div class="bulk-controls"><button id="bulkSelectAll" class="small-btn">Выбрать все</button><select id="bulkCategory" class="choice"></select><input id="bulkMarkup" type="number" min="0" step="0.1" placeholder="Наценка, %"><select id="bulkVisibility" class="choice"><option value="">Видимость — не менять</option><option value="true">Показать</option><option value="false">Скрыть</option></select><button id="applyBulkBtn" class="primary">Применить</button></div><div id="bulkProducts" class="bulk-products"></div></div></dialog>
 
-  <script type="module" src="./app.js?v=25"></script>
+  <script type="module" src="./app.js?v=27"></script>
 </body>
 </html>
