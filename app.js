@@ -610,9 +610,9 @@ function createLaunchSplash(){
   wrap.className='launch-splash';
   wrap.innerHTML=`
     <div class="launch-splash__inner">
-      <div class="launch-splash__badge">Q</div>
+      <img class="launch-splash__logo" src="./quatt-app-192.png?v=28" alt="QUATT">
       <div class="launch-splash__brand">QUATT QURYLYS</div>
-      <div class="launch-splash__sub">Каталог товаров</div>
+      <div class="launch-splash__sub">Құрылыс дүкені · Каталог товаров</div>
       <div class="launch-splash__dots" aria-hidden="true"><span></span><span></span><span></span></div>
     </div>`;
   document.body.appendChild(wrap);
@@ -751,6 +751,6 @@ async function init(){
   const waitMore=Math.max(0,800-(Date.now()-started));
   if(waitMore) await sleep(waitMore);
   hideLaunchSplash();
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=27").catch(()=>{})
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=28").catch(()=>{})
 }
 init();
