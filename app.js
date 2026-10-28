@@ -23,7 +23,7 @@ const ids = [
   "manageDialog","staffSection","sellerNamesSection","staffForm","staffEmail","staffRole","staffList","categoryForm","newCategoryName","categoryManager","sellerNameForm","newSellerName","sellerNamesList","bannerForm","bannerTitle","bannerSubtitle","bannerCategory","bannerManager","excelImport","exportExcelBtn","exportSatuBtn","productHistoryDialog","productHistoryTitle","productHistorySub","productHistoryList",
   "toastHost","ordersBtn","ordersBadge","myOrdersBtn","sellerPickerWrap","sellerPicker","cartBtn","cartBadge","cartDialog","cartItems","cartTotal","checkoutBtn","checkoutDialog","checkoutForm","clientName","clientPhone","orderNote","initialStatus","ordersDialog","ordersDialogTitle","ordersDialogSub","ordersList","orderTabs",
   "favoritesBtn","favoritesBadge","favoritesDialog","favoritesList","customerCartBtn","customerCartBadge","customerCartDialog","customerCartItems","customerCartTotal","sendCustomerCartBtn","contactsBtn","contactsDialog","contactWhatsappBtn","footerWhatsappBtn","helpWhatsappBtn","notFoundBtn","recentBtn",
-  "dashboardBtn","dashboardDialog","dashboardContent","bulkBtn","bulkDialog","bulkCategory","bulkMarkup","bulkVisibility","bulkSelectAll","applyBulkBtn","bulkProducts",
+  "dashboardBtn","dashboardDialog","dashboardContent","bulkBtn","bulkDialog",
   "lightboxDialog","lightboxClose","lightboxPrev","lightboxNext","lightboxStage","lightboxImage","lightboxCounter","zoomOutBtn","zoomResetBtn","zoomInBtn"
 ];
 const el = Object.fromEntries(ids.map(id=>[id,$(id)]));
@@ -153,7 +153,7 @@ function loadLocal(){try{state.favorites=JSON.parse(localStorage.getItem("quatt-
 async function loadRole(){if(!state.session){state.role="guest";state.email="";return}state.email=state.session.user.email||"";const {data,error}=await supabase.rpc("catalog_role");if(error){console.warn(error);state.role="seller";return}state.role=data||"seller"}
 async function ensureProductTools(){
   if(productTools)return;
-  if(!productToolsPromise)productToolsPromise=import("./product-tools.js?v=285").then(({setupProductTools})=>{
+  if(!productToolsPromise)productToolsPromise=import("./product-tools.js?v=286").then(({setupProductTools})=>{
     productTools=setupProductTools({el,state,canEditProducts,openProduct,renderFormImages,renderRelationOptions,setSelectedValues,updateMargin,renderBadgePreview,publicUrl,imgsFor,decodeImageSafely,toast,supabase,ensureExcel,loadData,addCategory,logProductChange,buildProductChanges,money,esc,render});
   }).catch(e=>{console.warn(e);productToolsPromise=null;$("productDraftStatus").textContent="Автосохранение недоступно: обновите страницу при подключении к интернету.";toast("Не удалось загрузить инструменты добавления товаров.",true)});
   return productToolsPromise;
@@ -218,7 +218,6 @@ function renderCategories(){
   el.mobileCategory.innerHTML=`<option value="all">${t("Все категории")} (${visibleProducts.length})</option>`+cats.map(c=>`<option value="${c.id}">${esc(t(c.name))} (${counts[c.id]||0})</option>`).join("");el.mobileCategory.value=state.cat;
   el.fCategory.innerHTML=cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
   el.bannerCategory.innerHTML=`<option value="">Без категории</option>`+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
-  el.bulkCategory.innerHTML=`<option value="">Категория — не менять</option>`+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
 }
 function setCat(v){state.cat=v;state.specFilters={};renderCategories();renderProducts()}
 function parseSpecs(text){const o={};String(text||"").split(/\r?\n/).forEach(line=>{const m=line.match(/^\s*([^:—-]{2,40})\s*[:—-]\s*(.+)\s*$/);if(m)o[m[1].trim()]=m[2].trim()});return o}
@@ -552,9 +551,7 @@ async function openDashboard(refreshOnly=false){
     renderProducts();
   }catch(e){el.dashboardContent.innerHTML=`<p class="error-text">${esc(e.message||e)}</p>`}
 }
-function openBulk(){if(!priv())return;el.bulkProducts.innerHTML=state.products.map(p=>`<label class="bulk-row"><input type="checkbox" value="${p.id}"><span>${esc(p.name)}</span><small>${esc(catName(p.category_id))}</small><b>${money(p.price)}</b></label>`).join("");el.bulkDialog.showModal()}
-el.bulkSelectAll.onclick=()=>{const boxes=[...el.bulkProducts.querySelectorAll('input[type="checkbox"]')];const all=boxes.every(x=>x.checked);boxes.forEach(x=>x.checked=!all)};
-el.applyBulkBtn.onclick=async()=>{const ids=[...el.bulkProducts.querySelectorAll('input:checked')].map(x=>x.value);if(!ids.length)return toast("Выберите товары",true);if(!confirm(`Изменить ${ids.length} товар(ов)?`))return;try{for(const id of ids){const p=state.products.find(x=>x.id===id),patch={};if(el.bulkCategory.value)patch.category_id=el.bulkCategory.value;if(el.bulkVisibility.value)patch.active=el.bulkVisibility.value==="true";if(el.bulkMarkup.value!==""){const n=Number(el.bulkMarkup.value);patch.markup=n;patch.price=roundRetail(Number(p.cost||0)*(1+n/100))}if(!Object.keys(patch).length)continue;const r=await supabase.from("products").update(patch).eq("id",id);if(r.error)throw r.error}toast("Массовое изменение готово");el.bulkDialog.close();await loadData()}catch(e){toast(e.message||String(e),true)}};
+let bulkTools=null; async function openBulk(){if(!canEditProducts())return;try{if(!bulkTools){const {setupBulkTools}=await import("./bulk-tools.js?v=286");bulkTools=setupBulkTools({el,state,canEditProducts,money,esc,catName,imgsFor,publicUrl,roundRetail,supabase,loadData,logProductChange,buildProductChanges});}bulkTools.open();}catch(e){toast(e.message||"Не удалось открыть массовое редактирование",true)}}
 
 function excelRows(){return state.products.map(p=>({Артикул:p.article||"",Название:p.name,Категория:catName(p.category_id),Бренд:p.brand||"",Цена:Number(p.price||0),Закуп:Number(p.cost||0),Наценка:Number(p.markup||0),Наличие:availabilityLabel(p.availability||"order"),Остаток:p.stock_qty??"",Архив:p.archived?"Да":"Нет",Характеристики:p.specs||"",Поставщик:p.supplier||"",Адрес_поставщика:p.supplier_address||"",Контакт_поставщика:p.supplier_contact||"",Дата_проверки:p.checked_date||"",Фото:imgsFor(p.id).map(i=>publicUrl(i.image_path)).join("; ")}))}
 async function downloadWorkbook(rows,name,sheet="Товары"){try{await ensureExcel();}catch(e){toast(e.message,true);return;}const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),sheet);XLSX.writeFile(wb,name)}
@@ -686,7 +683,7 @@ function createLaunchSplash(){
   wrap.className='launch-splash';
   wrap.innerHTML=`
     <div class="launch-splash__inner">
-      <img class="launch-splash__logo" src="./quatt-app-192.png?v=285" alt="QUATT">
+      <img class="launch-splash__logo" src="./quatt-app-192.png?v=286" alt="QUATT">
       <div class="launch-splash__brand">QUATT QURYLYS</div>
       <div class="launch-splash__sub">${state.lang==="kk"?"Жөндеу мен құрылысқа қажеттінің бәрі":"Всё для ремонта и строительства"}</div><div class="launch-splash__loading" role="status">${state.lang==="kk"?"Каталог жүктелуде…":"Загружаем каталог…"}</div>
       <div class="launch-splash__dots" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -856,6 +853,6 @@ async function init(){
   }
   // Show the catalogue immediately when its data is ready.
   hideLaunchSplash();
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=285").catch(()=>{})
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=286").catch(()=>{})
 }
 init();

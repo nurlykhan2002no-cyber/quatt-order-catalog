@@ -9,11 +9,12 @@
   <meta property="og:description" content="Строительные товары QUATT QURYLYS · Нұрсая 17 · Атырау · 09:00–21:00">
   <meta property="og:type" content="website">
   <title>QUATT QURYLYS — Каталог товаров</title>
-  <link rel="icon" href="./quatt-favicon-64.png?v=285" type="image/png">
-  <link rel="apple-touch-icon" href="./quatt-apple-180.png?v=285">
+  <link rel="icon" href="./quatt-favicon-64.png?v=286" type="image/png">
+  <link rel="apple-touch-icon" href="./quatt-apple-180.png?v=286">
   <meta name="apple-mobile-web-app-title" content="QUATT">
-  <link rel="manifest" href="./manifest.webmanifest?v=285">
-  <link rel="stylesheet" href="./styles.css?v=285">
+  <link rel="manifest" href="./manifest.webmanifest?v=286">
+  <script src="./theme.js?v=286"></script>
+  <link rel="stylesheet" href="./styles.css?v=286">
 </head>
 <body>
   <div id="toastHost" class="toast-host"></div>
@@ -22,7 +23,7 @@
     <a class="logo-wrap" href="./" aria-label="QUATT QURYLYS"><img class="logo-gif" src="./quatt.gif?v=25" alt="QUATT QURYLYS"></a>
     <div class="header-divider"></div>
     <span class="header-title">Каталог товаров</span>
-    <div class="header-right">
+    <div class="header-right"><label class="theme-picker"><span>Тема</span><select id="themeChoice" data-theme-choice aria-label="Тема оформления"><option value="system">◐ Авто</option><option value="light">☀ Светлая</option><option value="dark">☾ Тёмная</option></select></label>
       <button id="contactsBtn" class="client contact-top">☎ Контакты</button>
       <button id="favoritesBtn" class="client">♡ Избранное <span id="favoritesBadge" class="badge hidden">0</span></button>
       <button id="customerCartBtn" class="client">Корзина <span id="customerCartBadge" class="badge hidden">0</span></button>
@@ -110,6 +111,7 @@
       <footer>
         <div><strong>QUATT QURYLYS</strong><span>Нұрсая 17, Атырау · 09:00–21:00</span></div>
         <div class="footer-contacts"><a href="tel:+77076154747">+7 707 615 4747</a><button id="footerWhatsappBtn" class="whatsapp-link">WhatsApp</button></div>
+        <label class="theme-picker theme-picker-footer"><span>Тема</span><select id="themeChoiceFooter" data-theme-choice aria-label="Тема оформления"><option value="system">◐ Авто</option><option value="light">☀ Светлая</option><option value="dark">☾ Тёмная</option></select></label>
       </footer>
     </main>
   </div>
@@ -207,8 +209,8 @@
 
   <dialog id="dashboardDialog"><div class="modal-card dashboard-modal"><div class="modal-head"><div><h2>Дашборд</h2><p>Каталог и активность клиентов.</p></div><button type="button" class="close" data-close="dashboardDialog">×</button></div><div id="dashboardContent"></div></div></dialog>
 
-  <dialog id="bulkDialog"><div class="modal-card bulk-modal"><div class="modal-head"><div><h2>Массовое редактирование</h2><p>Выберите товары и примените действие.</p></div><button type="button" class="close" data-close="bulkDialog">×</button></div><div class="bulk-controls"><button id="bulkSelectAll" class="small-btn">Выбрать все</button><select id="bulkCategory" class="choice"></select><input id="bulkMarkup" type="number" min="0" step="0.1" placeholder="Наценка, %"><select id="bulkVisibility" class="choice"><option value="">Видимость — не менять</option><option value="true">Показать</option><option value="false">Скрыть</option></select><button id="applyBulkBtn" class="primary">Применить</button></div><div id="bulkProducts" class="bulk-products"></div></div></dialog>
+  <dialog id="bulkDialog" aria-label="Массовое редактирование"><div class="modal-card bulk-modal"></div></dialog>
 
-  <script type="module" src="./app.js?v=285"></script>
+  <script type="module" src="./app.js?v=286"></script>
 </body>
 </html>
