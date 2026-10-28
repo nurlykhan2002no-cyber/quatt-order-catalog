@@ -9,11 +9,11 @@
   <meta property="og:description" content="Строительные товары QUATT QURYLYS · Нұрсая 17 · Атырау · 09:00–21:00">
   <meta property="og:type" content="website">
   <title>QUATT QURYLYS — Каталог товаров</title>
-  <link rel="icon" href="./quatt-favicon-64.png?v=284" type="image/png">
-  <link rel="apple-touch-icon" href="./quatt-apple-180.png?v=284">
+  <link rel="icon" href="./quatt-favicon-64.png?v=285" type="image/png">
+  <link rel="apple-touch-icon" href="./quatt-apple-180.png?v=285">
   <meta name="apple-mobile-web-app-title" content="QUATT">
-  <link rel="manifest" href="./manifest.webmanifest?v=284">
-  <link rel="stylesheet" href="./styles.css?v=284">
+  <link rel="manifest" href="./manifest.webmanifest?v=285">
+  <link rel="stylesheet" href="./styles.css?v=285">
 </head>
 <body>
   <div id="toastHost" class="toast-host"></div>
@@ -151,6 +151,8 @@
     <div class="form-grid">
       <label>Название товара *<input id="fName" required></label>
       <label>Категория<select id="fCategory" class="choice"></select><div id="ownerCategoryAdd" class="category-add hidden"><input id="newCategoryInForm" placeholder="Новая категория"><button id="addCategoryInFormBtn" type="button">＋ Добавить</button></div></label>
+      <label>Артикул<input id="fArticle" maxlength="120" placeholder="Например, ROMANS-001"></label>
+      <div id="duplicateProductHint" class="wide duplicate-hint" hidden role="status"></div>
       <label>Бренд<input id="fBrand"></label>
       <label>Розничная цена, ₸ *<input id="fPrice" type="number" min="0" step="100" required></label>
       <label>Как показывать цену<select id="fPriceMode" class="choice"><option value="show">Обычная цена</option><option value="from">Цена от</option><option value="ask">Уточнить цену</option></select></label>
@@ -170,10 +172,11 @@
 
     <section class="internal"><h3>✓ Внутренняя информация</h3><div class="form-grid">
       <label>Закупочная цена, ₸ *<input id="fCost" type="number" min="0" step="0.01" required></label>
+      <section class="wide supplier-tools"><label>Выбрать поставщика из справочника<select id="supplierPicker"><option value="">Выберите поставщика</option></select></label><button id="openSupplierDirectory" type="button" class="small-btn">Справочник поставщиков</button></section>
       <label>Поставщик / магазин<input id="fSupplier"></label>
       <label class="wide">Адрес поставщика<input id="fSupplierAddress"></label>
       <label>Контакт поставщика<input id="fSupplierContact"></label>
-      <label>Дата проверки цены<input id="fCheckedDate" type="date"></label>
+      <label>Дата проверки цены<input id="fCheckedDate" type="date"><span id="priceFreshnessHint" class="fine"></span></label>
       <label class="wide">Внутренние заметки<textarea id="fNotes"></textarea></label>
     </div>
     <div class="markup"><span>Наценка:</span><button type="button" data-markup="20">+20%</button><button type="button" data-markup="25">+25%</button><button type="button" data-markup="30">+30%</button><button type="button" data-markup="50">+50%</button><button type="button" data-markup="75">+75%</button><button type="button" data-markup="100">+100%</button><div class="manual-markup"><label>Своя, %</label><input id="manualMarkup" type="number" min="0" step="0.1"><button id="applyManualMarkup" type="button">Применить</button></div><span id="marginInfo">Маржа: 0 ₸</span></div></section>
@@ -188,7 +191,7 @@
     <section id="sellerNamesSection"><h3>Имена продавцов</h3><p class="section-help">Одна общая учётка продавцов, но корзины и заказы разделяются по выбранному имени.</p><form id="sellerNameForm" class="category-form"><input id="newSellerName" placeholder="Имя продавца" required><button class="primary" type="submit">Добавить</button></form><div id="sellerNamesList"></div></section>
     <section><h3>Категории</h3><form id="categoryForm" class="category-form"><input id="newCategoryName" placeholder="Новая категория" required><button class="primary" type="submit">Добавить</button></form><div id="categoryManager"></div></section>
     <section><h3>Баннеры главной</h3><form id="bannerForm" class="banner-form"><input id="bannerTitle" placeholder="Заголовок" required><input id="bannerSubtitle" placeholder="Подзаголовок"><select id="bannerCategory" class="choice"></select><button class="primary" type="submit">Добавить</button></form><div id="bannerManager"></div></section>
-    <section><h3>Импорт / экспорт</h3><div class="action-row"><label class="file-btn">Импорт Excel<input id="excelImport" type="file" accept=".xlsx,.xls,.csv"></label><button id="exportExcelBtn" class="small-btn">Экспорт Excel</button><button id="exportSatuBtn" class="small-btn">Экспорт для Satu.kz</button></div><p class="fine">При импорте поддерживаются колонки: Название, Категория, Бренд, Цена, Закуп, Характеристики, Поставщик. Перед массовым импортом лучше проверить 2–3 строки.</p></section>
+    <section><h3>Импорт / экспорт</h3><div class="action-row"><label class="file-btn">Импорт Excel<input id="excelImport" type="file" accept=".xlsx,.xls,.csv"></label><button id="exportExcelBtn" class="small-btn">Экспорт Excel</button><button id="exportSatuBtn" class="small-btn">Экспорт для Satu.kz</button></div><p class="fine">Колонки: Артикул, Название, Категория, Бренд, Цена, Закуп, Характеристики, Поставщик. Сначала откроется предпросмотр. Существующие товары обновятся только после вашего выбора; пустые ячейки сохранят прежние данные.</p></section>
   </div></dialog>
 
 
@@ -206,6 +209,6 @@
 
   <dialog id="bulkDialog"><div class="modal-card bulk-modal"><div class="modal-head"><div><h2>Массовое редактирование</h2><p>Выберите товары и примените действие.</p></div><button type="button" class="close" data-close="bulkDialog">×</button></div><div class="bulk-controls"><button id="bulkSelectAll" class="small-btn">Выбрать все</button><select id="bulkCategory" class="choice"></select><input id="bulkMarkup" type="number" min="0" step="0.1" placeholder="Наценка, %"><select id="bulkVisibility" class="choice"><option value="">Видимость — не менять</option><option value="true">Показать</option><option value="false">Скрыть</option></select><button id="applyBulkBtn" class="primary">Применить</button></div><div id="bulkProducts" class="bulk-products"></div></div></dialog>
 
-  <script type="module" src="./app.js?v=284"></script>
+  <script type="module" src="./app.js?v=285"></script>
 </body>
 </html>

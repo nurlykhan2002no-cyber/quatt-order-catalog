@@ -1,5 +1,6 @@
+import {setupAdminTools} from "./admin-tools.js?v=285";
 // Product drafts stay in this browser, isolated by the signed-in account.
-const FIELD_IDS = ['fName','fCategory','fBrand','fPrice','fPriceMode','fAvailability','fStockQty','fBadge','fDelivery','fOldPrice','fSaleEnd','fSpecs','fVariants','fVideoUrl','fCost','fSupplier','fSupplierAddress','fSupplierContact','fCheckedDate','fNotes','fActive','fRelated','fBundle'];
+const FIELD_IDS = ['fName','fArticle','fCategory','fBrand','fPrice','fPriceMode','fAvailability','fStockQty','fBadge','fDelivery','fOldPrice','fSaleEnd','fSpecs','fVariants','fVideoUrl','fCost','fSupplier','fSupplierAddress','fSupplierContact','fCheckedDate','fNotes','fActive','fRelated','fBundle'];
 export function templateFields(name) {
   const n = String(name).toLowerCase();
   if (/унитаз/.test(n)) return ['Размер, мм','Тип выпуска','Установка','Материал','Цвет','Комплектация','Гарантия'];
@@ -15,7 +16,9 @@ export function appendTemplate(specs, fields) {
   const missing = fields.filter(field=>!present.has(fieldKey(field)));
   return [String(specs).trimEnd(), ...missing.map(field=>field+': ')].filter(Boolean).join('\n');
 }
-export function setupProductTools({el,state,canEditProducts,openProduct,renderFormImages,renderRelationOptions,setSelectedValues,updateMargin,renderBadgePreview,publicUrl,imgsFor,decodeImageSafely,toast}) {
+export function setupProductTools(ctx) {
+  const {el,state,canEditProducts,openProduct,renderFormImages,renderRelationOptions,setSelectedValues,updateMargin,renderBadgePreview,publicUrl,imgsFor,decodeImageSafely,toast}=ctx;
+  const adminTools=setupAdminTools({...ctx,flushDraft:()=>flush()});
   const $ = id=>document.getElementById(id);
   const status = $('productDraftStatus');
   let key='', baseline='', queuedSignature='', stopped=false, timer, generation=0, queue=Promise.resolve(), lastDraft=null;
@@ -71,7 +74,7 @@ export function setupProductTools({el,state,canEditProducts,openProduct,renderFo
     key=state.email+':'+(el.productId.value||'new'); baseline=signature(snapshot()); queuedSignature=baseline; lastDraft=null;
     $('restoreProductDraft').hidden=true;
     $('copyProductBtn').hidden=!el.productId.value;
-    refreshTemplate(); report('Черновик сохраняется в этом браузере вместе с фотографиями.');
+    refreshTemplate(); adminTools.refresh(); report('Черновик сохраняется в этом браузере вместе с фотографиями.');
     try{
       const found=await store('readonly',s=>s.get(key));
       if(token!==generation)return;
@@ -98,7 +101,7 @@ export function setupProductTools({el,state,canEditProducts,openProduct,renderFo
       else node.value=String(value??'');
     }
     state.formImages=lastDraft.images.slice(0,5).filter(i=>i.file||state.images.some(current=>current.id===i.id&&current.product_id===el.productId.value)).map(i=>i.file?{file:i.file,preview:URL.createObjectURL(i.file)}:{...i});
-    renderFormImages();updateMargin();renderBadgePreview();refreshTemplate();
+    renderFormImages();updateMargin();renderBadgePreview();refreshTemplate();adminTools.sync();
     baseline=signature(snapshot());queuedSignature=baseline;stopped=false;$('restoreProductDraft').hidden=true;report('Черновик восстановлен. Проверьте данные перед сохранением товара.');
   };
   $('applySpecTemplate').onclick=()=>{
@@ -123,7 +126,7 @@ export function setupProductTools({el,state,canEditProducts,openProduct,renderFo
         const blob=await res.blob();const file=await decodeImageSafely(new File([blob],'copy-'+index,{type:blob.type||'image/webp'}));return {file,preview:URL.createObjectURL(file)};
       }));
       openProduct(source);state.editing=null;el.productId.value='';state.formImages=copies;
-      el.fName.value=(source.name||'Товар')+' — копия';el.fStockQty.value='';el.fBadge.value='';el.fOldPrice.value='';el.fSaleEnd.value='';el.fCheckedDate.value='';el.fActive.checked=false;
+      el.fName.value=(source.name||'Товар')+' — копия';$('fArticle').value='';el.fStockQty.value='';el.fBadge.value='';el.fOldPrice.value='';el.fSaleEnd.value='';el.fCheckedDate.value='';el.fActive.checked=false;
       el.productDialogTitle.textContent='Новый товар из копии';
       for(const id of ['deleteProductBtn','productHistoryBtn','priceHistoryBtn','archiveProductBtn'])el[id].classList.add('hidden');
       renderFormImages();renderBadgePreview();await opened();baseline='';queuedSignature='';await flush();lastDraft=null;$('restoreProductDraft').hidden=true;
@@ -137,5 +140,5 @@ export function setupProductTools({el,state,canEditProducts,openProduct,renderFo
   el.productDialog.addEventListener('close',()=>flush());
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&el.productDialog.open)flush();});
   window.addEventListener('pagehide',()=>{if(el.productDialog.open)flush();});
-  return {opened,changed,flush,saved};
+  return {opened,changed,flush,saved,catalogLoaded:()=>adminTools.catalogLoaded()};
 }
