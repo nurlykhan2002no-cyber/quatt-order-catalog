@@ -9,9 +9,11 @@
   <meta property="og:description" content="Строительные товары QUATT QURYLYS · Нұрсая 17 · Атырау · 09:00–21:00">
   <meta property="og:type" content="website">
   <title>QUATT QURYLYS — Каталог товаров</title>
-  <link rel="icon" href="./quatt-favicon-64.png?v=28" type="image/png">
-  <link rel="manifest" href="./manifest.webmanifest?v=28">
-  <link rel="stylesheet" href="./styles.css?v=283">
+  <link rel="icon" href="./quatt-favicon-64.png?v=284" type="image/png">
+  <link rel="apple-touch-icon" href="./quatt-apple-180.png?v=284">
+  <meta name="apple-mobile-web-app-title" content="QUATT">
+  <link rel="manifest" href="./manifest.webmanifest?v=284">
+  <link rel="stylesheet" href="./styles.css?v=284">
 </head>
 <body>
   <div id="toastHost" class="toast-host"></div>
@@ -136,6 +138,7 @@
 
   <dialog id="productDialog"><form id="productForm" class="modal-card form-modal">
     <div class="modal-head"><div><h2 id="productDialogTitle">Новый товар</h2><p>Фото и розничную информацию увидит клиент. Закуп и поставщика видят администратор и снабженец.</p></div><button type="button" class="close" data-close="productDialog">×</button></div>
+    <div class="product-helper-bar"><p id="productDraftStatus" role="status" aria-live="polite">Черновик сохраняется на этом устройстве.</p><button id="restoreProductDraft" class="small-btn" type="button" hidden>Восстановить черновик</button><button id="copyProductBtn" class="small-btn" type="button" hidden>Создать копию товара</button></div>
     <input id="productId" type="hidden">
     <div class="upload-box">
       <span class="camera" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.5 4 16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1.5-2h5Z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>
@@ -157,6 +160,7 @@
       <label>Срок поставки<input id="fDelivery" value="1 день"></label>
       <label>Старая цена, ₸<input id="fOldPrice" type="number" min="0" step="100"></label>
       <label>Акция до<input id="fSaleEnd" type="date"></label>
+      <section class="wide spec-template"><div class="template-actions"><strong>Шаблон: <span id="templateCategoryName"></span></strong><button id="applySpecTemplate" type="button" class="small-btn">Добавить поля характеристик</button></div><details><summary>Настроить шаблон категории</summary><label>Названия полей — по одному в строке<textarea id="templateFields" rows="5"></textarea></label><button id="saveSpecTemplate" type="button" class="small-btn">Сохранить шаблон на устройстве</button></details></section>
       <label class="wide">Характеристики — по одной строке в формате «Материал: Латунь»<textarea id="fSpecs" rows="6"></textarea></label>
       <label class="wide">Варианты — по одной строке: «20 мм | 1200»<textarea id="fVariants" rows="4"></textarea></label>
       <label class="wide">Ссылка на видео товара<input id="fVideoUrl" type="url" placeholder="https://..."></label>
@@ -202,6 +206,6 @@
 
   <dialog id="bulkDialog"><div class="modal-card bulk-modal"><div class="modal-head"><div><h2>Массовое редактирование</h2><p>Выберите товары и примените действие.</p></div><button type="button" class="close" data-close="bulkDialog">×</button></div><div class="bulk-controls"><button id="bulkSelectAll" class="small-btn">Выбрать все</button><select id="bulkCategory" class="choice"></select><input id="bulkMarkup" type="number" min="0" step="0.1" placeholder="Наценка, %"><select id="bulkVisibility" class="choice"><option value="">Видимость — не менять</option><option value="true">Показать</option><option value="false">Скрыть</option></select><button id="applyBulkBtn" class="primary">Применить</button></div><div id="bulkProducts" class="bulk-products"></div></div></dialog>
 
-  <script type="module" src="./app.js?v=283"></script>
+  <script type="module" src="./app.js?v=284"></script>
 </body>
 </html>

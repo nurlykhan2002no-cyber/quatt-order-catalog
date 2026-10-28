@@ -400,3 +400,18 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{ou
   #detailContent>.detail-photos img{width:100%;height:min(64vw,360px);object-fit:contain;background:#fafafa}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+/* Product editor tools */
+.product-helper-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:12px 14px;margin-bottom:16px;background:#fffbea;border:1px solid #eee4a4;border-radius:10px}
+.product-helper-bar p{flex:1 1 230px;margin:0;font-size:12px;line-height:1.5;color:#615722}
+.product-helper-bar [hidden]{display:none!important}
+.spec-template{padding:14px;border:1px solid #e0e2e5;border-radius:10px;background:#fafafa}
+.template-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.spec-template details{margin-top:10px;font-size:12px}.spec-template summary{cursor:pointer;color:#5e6167}.spec-template details label{margin:12px 0 8px}
+.launch-splash{background:#101112;backdrop-filter:none}
+.launch-splash__logo{width:112px;height:112px;object-fit:contain;border-radius:26px;box-shadow:0 0 0 1px #ffffff12,0 16px 60px #0006;animation:none}
+.launch-splash__brand{color:#f5df00;letter-spacing:.13em;font-size:20px;animation:none}
+.launch-splash__sub{max-width:280px;line-height:1.5;font-size:13px;animation:none}
+.launch-splash__loading{color:#999;font:12px Arial,sans-serif;margin-top:16px}
+.launch-splash__dots{margin-top:2px}.launch-splash__dots span{width:5px;height:5px;background:#f5df00}
+@media(max-width:600px){.product-helper-bar .small-btn{flex:1 1 180px;min-height:42px}.template-actions .small-btn{width:100%}}
