@@ -41,6 +41,7 @@ const priv = () => canViewInternal();
 const LANG_KEY="quatt-ui-lang";
 state.lang=localStorage.getItem(LANG_KEY)==="kk"?"kk":"ru";
 const I18N_KK={
+  "Фильтры":"Сүзгілер","Скрыть фильтры":"Сүзгілерді жасыру","До":"Дейін","Размер":"Өлшем","Цвет":"Түс","Диаметр":"Диаметр","Мощность":"Қуат","Материал":"Материал","Унитазы":"Унитаздар","Без категории":"Санатсыз","Поиск товара":"Тауар іздеу","1 день":"1 күн",
   "Каталог товаров":"Тауарлар каталогы","Контакты":"Байланыс","Избранное":"Таңдаулылар","Корзина":"Себет","Войти":"Кіру","Выйти":"Шығу",
   "Продавец":"Сатушы","Мои заказы":"Менің тапсырыстарым","Корзина продавца":"Сатушы себеті","Клиент":"Клиент","Режим клиента":"Клиент режимі","Режим продавца":"Сатушы режимі",
   "Все товары":"Барлық тауарлар","Все категории":"Барлық санаттар","Все бренды":"Барлық брендтер","Недавно смотрели":"Жақында қаралғандар","Не нашли товар?":"Тауарды таппадыңыз ба?",
@@ -83,6 +84,12 @@ function syncLanguageSwitcher(){setupLanguageSwitcher();setupMobileLanguageSwitc
 function applyLanguageUI(){
   syncLanguageSwitcher();document.documentElement.lang=uiLang()==="kk"?"kk":"ru";
   const kk=uiLang()==="kk";
+  const categoryHeading=document.querySelector(".nav-caption");if(categoryHeading)categoryHeading.textContent=kk?"САНАТТАР":"КАТЕГОРИИ";
+  const availabilityNote=document.querySelector(".result-line>span:last-child");if(availabilityNote)availabilityNote.textContent=kk?"◷ Сатып алар алдында қолжетімділігі мен мерзімін нақтылаймыз":"◷ Наличие и срок уточняем перед покупкой";
+  const filterToggle=$("mobileFilterToggle");if(filterToggle)filterToggle.querySelector("span").textContent=t(document.body.classList.contains("mobile-filters-open")?"Скрыть фильтры":"Фильтры");
+  setLeadText(document.querySelector(".price-filter"),t("До")+" ");
+  el.searchInput.setAttribute("aria-label",t("Поиск товара"));
+  syncCustomerNavigation();
   document.querySelector(".header-title")&&(document.querySelector(".header-title").textContent=t("Каталог товаров"));
   setButtonLabel("contactsBtn",t("Контакты"),"☎ ");setButtonLabel("favoritesBtn",t("Избранное"),"♡ ");setButtonLabel("customerCartBtn",t("Корзина"));setButtonLabel("loginBtn",t("Войти"));setButtonLabel("logoutBtn",t("Выйти"));
   setButtonLabel("myOrdersBtn",t("Мои заказы"));setButtonLabel("cartBtn",t("Корзина продавца"));if(el.sellerPickerWrap)setLeadText(el.sellerPickerWrap,t("Продавец")+" ");
@@ -117,7 +124,7 @@ document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeDialog(b
 document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{if(e.target===d)d.close()}));
 function publicUrl(path){return path?supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl:""}
 function imgsFor(id){return state.images.filter(i=>i.product_id===id).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))}
-function catName(id){return state.categories.find(c=>c.id===id)?.name||"Без категории"}
+function catName(id){return t(state.categories.find(c=>c.id===id)?.name||"Без категории")}
 function availabilityLabel(v){return v==="in_stock"?t("В наличии"):v==="out_of_stock"?t("Нет в наличии"):t("Под заказ")}
 function saleExpired(p){return !!p.sale_end && new Date(p.sale_end+"T23:59:59")<new Date()}
 function validSale(p){return Number(p.old_price)>Number(p.price) && (!p.sale_end || !saleExpired(p))}
@@ -175,6 +182,7 @@ function renderAuth(){
   document.body.classList.toggle("seller-mode",sellerView&&!clientView);
   document.body.classList.toggle("internal-mode",!!state.session&&internal&&!sellerView&&!clientView);
   syncMobileHeaderUI();
+  syncCustomerNavigation();
   syncLanguageSwitcher();
   syncArchiveToggle();
   renderLocalBadges();
@@ -184,9 +192,9 @@ function renderCategories(){
   const cats=state.categories.filter(c=>c.active||canViewInternal());
   const visibleProducts=state.products.filter(p=>state.showArchived&&canViewInternal()?p.archived===true:((p.archived!==true)&&(p.active!==false||canViewInternal())));
   const counts={};visibleProducts.forEach(p=>{if(p.category_id)counts[p.category_id]=(counts[p.category_id]||0)+1});
-  el.desktopCategories.innerHTML=`<button class="nav ${state.cat==="all"?"selected":""}" data-cat="all"><span>${t("Все товары")}</span><span class="count">${visibleProducts.length}</span></button>`+cats.map(c=>`<button class="nav ${state.cat===c.id?"selected":""}" data-cat="${c.id}"><span>${esc(c.name)}</span><span class="count">${counts[c.id]||0}</span></button>`).join("");
+  el.desktopCategories.innerHTML=`<button class="nav ${state.cat==="all"?"selected":""}" data-cat="all"><span>${t("Все товары")}</span><span class="count">${visibleProducts.length}</span></button>`+cats.map(c=>`<button class="nav ${state.cat===c.id?"selected":""}" data-cat="${c.id}"><span>${esc(t(c.name))}</span><span class="count">${counts[c.id]||0}</span></button>`).join("");
   el.desktopCategories.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>setCat(b.dataset.cat));
-  el.mobileCategory.innerHTML=`<option value="all">${t("Все категории")} (${visibleProducts.length})</option>`+cats.map(c=>`<option value="${c.id}">${esc(c.name)} (${counts[c.id]||0})</option>`).join("");el.mobileCategory.value=state.cat;
+  el.mobileCategory.innerHTML=`<option value="all">${t("Все категории")} (${visibleProducts.length})</option>`+cats.map(c=>`<option value="${c.id}">${esc(t(c.name))} (${counts[c.id]||0})</option>`).join("");el.mobileCategory.value=state.cat;
   el.fCategory.innerHTML=cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
   el.bannerCategory.innerHTML=`<option value="">Без категории</option>`+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
   el.bulkCategory.innerHTML=`<option value="">Категория — не менять</option>`+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
@@ -196,9 +204,9 @@ function parseSpecs(text){const o={};String(text||"").split(/\r?\n/).forEach(lin
 function commonSpecKey(k){const n=norm(k);if(n.includes("цвет"))return "Цвет";if(n.includes("размер"))return "Размер";if(n.includes("диаметр")||n==="d")return "Диаметр";if(n.includes("мощност"))return "Мощность";if(n.includes("материал"))return "Материал";return null}
 function renderFilters(){
   const filterProducts=state.products.filter(p=>state.showArchived&&canViewInternal()?p.archived===true:((p.archived!==true)&&(canViewInternal()||p.active!==false)));
-  const brands=uniq(filterProducts.map(p=>p.brand).filter(Boolean)).sort((a,b)=>a.localeCompare(b,"ru"));el.brandFilter.innerHTML=`<option value="all">${t("Все бренды")}</option>`+brands.map(b=>`<option>${esc(b)}</option>`).join("");if(!brands.includes(state.brand))state.brand="all";el.brandFilter.value=state.brand;
+  const brands=uniq(filterProducts.map(p=>p.brand).filter(Boolean)).sort((a,b)=>a.localeCompare(b,"ru"));el.brandFilter.innerHTML=`<option value="all">${t("Все бренды")}</option>`+brands.map(b=>`<option>${esc(b)}</option>`).join("");if(!brands.includes(state.brand))state.brand="all";el.brandFilter.value=state.brand;el.brandFilter.classList.toggle("hidden",!brands.length);
   const values={};filterProducts.forEach(p=>Object.entries(parseSpecs(p.specs)).forEach(([k,v])=>{const ck=commonSpecKey(k);if(ck){values[ck]??=new Set();values[ck].add(v)}}));
-  el.dynamicFilters.innerHTML=Object.entries(values).filter(([,s])=>s.size>1).slice(0,5).map(([k,s])=>`<select class="choice" data-spec-filter="${esc(k)}"><option value="">${esc(k)}: ${uiLang()==="kk"?"барлығы":"все"}</option>${[...s].sort().map(v=>`<option ${state.specFilters[k]===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`).join("");
+  el.dynamicFilters.innerHTML=Object.entries(values).filter(([,s])=>s.size>1).slice(0,5).map(([k,s])=>`<select class="choice" data-spec-filter="${esc(k)}"><option value="">${esc(t(k))}: ${uiLang()==="kk"?"барлығы":"все"}</option>${[...s].sort().map(v=>`<option ${state.specFilters[k]===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`).join("");
   el.dynamicFilters.querySelectorAll("[data-spec-filter]").forEach(s=>s.onchange=()=>{state.specFilters[s.dataset.specFilter]=s.value;renderProducts()});
 }
 function filteredProducts(){
@@ -207,10 +215,10 @@ function filteredProducts(){
   for(const [k,v] of Object.entries(state.specFilters)){if(!v)continue;arr=arr.filter(p=>{const specs=parseSpecs(p.specs);return Object.entries(specs).some(([sk,sv])=>commonSpecKey(sk)===k&&sv===v)})}
   if(state.sort==="Цена: по возрастанию")arr.sort((a,b)=>Number(a.price)-Number(b.price));else if(state.sort==="Цена: по убыванию")arr.sort((a,b)=>Number(b.price)-Number(a.price));else if(state.sort==="Популярные")arr.sort((a,b)=>(state.viewCounts[b.id]||0)-(state.viewCounts[a.id]||0));else arr.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));return arr;
 }
-function productCard(p,mini=false){const cover=imgsFor(p.id)[0];const fav=state.favorites.includes(p.id);const sale=validSale(p);const stock=Number.isFinite(Number(p.stock_qty))&&p.stock_qty!==null&&p.stock_qty!==""?Math.max(0,Number(p.stock_qty)):null;return `<article class="product ${mini?"mini-product":""} ${p.archived?"archived-product":""}" data-product-card="${p.id}"><a class="photo" href="${productLink(p.id)}" data-open-product="${p.id}">${cover?`<img src="${publicUrl(cover.image_path)}" alt="${esc(p.name)}" loading="lazy">`:`<span class="no-photo">Q</span>`}<span class="order-tag ${p.availability||"order"}">${esc(availabilityLabel(p.availability||"order"))}</span>${p.badge&&!(norm(p.badge)==="акция"&&!validSale(p))?`<span class="product-badge badge-${norm(p.badge)}">${esc(p.badge)}</span>`:""}</a><button class="favorite ${fav?"on":""}" data-favorite="${p.id}" aria-label="${t("Избранное")}">${fav?"♥":"♡"}</button><div class="product-info"><div class="product-category">${esc(catName(p.category_id))}${p.brand?" · "+esc(p.brand):""}</div><a class="product-title" href="${productLink(p.id)}" data-open-product="${p.id}">${esc(p.name)}</a><div class="price-row"><div class="product-price">${esc(priceText(p))}</div>${sale?`<span class="old-price">${money(p.old_price)}</span>`:""}</div><div class="delivery">◷ ${esc(p.delivery||t("Срок уточняется"))}</div>${stock!==null?`<div class="stock-line">${t("Остаток")}: <b>${stock} ${t("шт.")}</b></div>`:""}${p.archived?`<div class="archive-mark">Архив</div>`:""}${sale&&p.sale_end?`<div class="sale-deadline">${esc(saleInfo(p))}</div>`:""}${priv()?`<div class="private-price">Закуп: ${money(p.cost)}<span>+${money(Number(p.price)-Number(p.cost))}</span></div>`:""}<div class="card-actions"><button class="small-btn" data-customer-add="${p.id}">＋ ${t("В корзину")}</button>${isSeller()?`<button class="small-btn seller-add" data-seller-add="${p.id}">＋ ${t("Продавцу")}</button>`:""}</div></div></article>`}
+function productCard(p,mini=false,priority=false){const cover=imgsFor(p.id)[0];const fav=state.favorites.includes(p.id);const sale=validSale(p);const stock=Number.isFinite(Number(p.stock_qty))&&p.stock_qty!==null&&p.stock_qty!==""?Math.max(0,Number(p.stock_qty)):null;return `<article class="product ${mini?"mini-product":""} ${p.archived?"archived-product":""}" data-product-card="${p.id}"><a class="photo" href="${productLink(p.id)}" data-open-product="${p.id}">${cover?`<img src="${publicUrl(cover.image_path)}" alt="${esc(p.name)}" loading="${priority?"eager":"lazy"}" decoding="async" ${priority?'fetchpriority="high"':""}>`:`<span class="no-photo">Q</span>`}<span class="order-tag ${p.availability||"order"}">${esc(availabilityLabel(p.availability||"order"))}</span>${p.badge&&!(norm(p.badge)==="акция"&&!validSale(p))?`<span class="product-badge badge-${norm(p.badge)}">${esc(p.badge)}</span>`:""}</a><button class="favorite ${fav?"on":""}" data-favorite="${p.id}" aria-label="${t("Избранное")}">${fav?"♥":"♡"}</button><div class="product-info"><div class="product-category">${esc(catName(p.category_id))}${p.brand?" · "+esc(p.brand):""}</div><a class="product-title" href="${productLink(p.id)}" data-open-product="${p.id}">${esc(p.name)}</a><div class="price-row"><div class="product-price">${esc(priceText(p))}</div>${sale?`<span class="old-price">${money(p.old_price)}</span>`:""}</div><div class="delivery">◷ ${esc(t(p.delivery||"Срок уточняется"))}</div>${stock!==null?`<div class="stock-line">${t("Остаток")}: <b>${stock} ${t("шт.")}</b></div>`:""}${p.archived?`<div class="archive-mark">Архив</div>`:""}${sale&&p.sale_end?`<div class="sale-deadline">${esc(saleInfo(p))}</div>`:""}${priv()?`<div class="private-price">Закуп: ${money(p.cost)}<span>+${money(Number(p.price)-Number(p.cost))}</span></div>`:""}<div class="card-actions"><button class="small-btn" data-customer-add="${p.id}">＋ ${t("В корзину")}</button>${isSeller()?`<button class="small-btn seller-add" data-seller-add="${p.id}">＋ ${t("Продавцу")}</button>`:""}</div></div></article>`}
 function bindProductCards(root=document){root.querySelectorAll("[data-open-product]").forEach(b=>b.onclick=e=>{e.preventDefault();openDetail(b.dataset.openProduct)});root.querySelectorAll("[data-favorite]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(b.dataset.favorite)});root.querySelectorAll("[data-customer-add]").forEach(b=>b.onclick=e=>{e.stopPropagation();addCustomerCart(b.dataset.customerAdd)});root.querySelectorAll("[data-seller-add]").forEach(b=>b.onclick=e=>{e.stopPropagation();addToCart(b.dataset.sellerAdd);toast(uiLang()==="kk"?"Сатушы себетіне қосылды":"Добавлено в корзину продавца")})}
 function renderProducts(){
-  const arr=filteredProducts();el.resultCount.textContent=uiLang()==="kk"?`${arr.length} тауар`:`${arr.length} ${arr.length===1?"товар":"товаров"}`;el.stateBox.classList.toggle("hidden",arr.length>0);el.catalogGrid.classList.toggle("hidden",arr.length===0);if(!arr.length){el.stateBox.innerHTML=`<h2>${t("Ничего не найдено")}</h2><p>${t("Измени фильтры или напиши нам в WhatsApp — найдём товар под заказ.")}</p><button class="whatsapp-btn" id="emptyWhatsapp">${t("Написать в WhatsApp")}</button>`;$("emptyWhatsapp").onclick=()=>openWhatsapp("Здравствуйте! Пришёл с сайта QUATT QURYLYS. Не нашёл нужный товар. Помогите подобрать / заказать.");return}el.catalogGrid.innerHTML=arr.map(p=>productCard(p)).join("");bindProductCards(el.catalogGrid);renderRecent();
+  const arr=filteredProducts();el.resultCount.textContent=uiLang()==="kk"?`${arr.length} тауар`:`${arr.length} ${arr.length===1?"товар":"товаров"}`;el.stateBox.classList.toggle("hidden",arr.length>0);el.catalogGrid.classList.toggle("hidden",arr.length===0);if(!arr.length){el.stateBox.innerHTML=`<h2>${t("Ничего не найдено")}</h2><p>${t("Измени фильтры или напиши нам в WhatsApp — найдём товар под заказ.")}</p><button class="whatsapp-btn" id="emptyWhatsapp">${t("Написать в WhatsApp")}</button>`;$("emptyWhatsapp").onclick=()=>openWhatsapp("Здравствуйте! Пришёл с сайта QUATT QURYLYS. Не нашёл нужный товар. Помогите подобрать / заказать.");return}el.catalogGrid.innerHTML=arr.map((p,i)=>productCard(p,false,i<2)).join("");bindProductCards(el.catalogGrid);renderRecent();
 }
 function renderBanners(){const rows=state.banners.filter(b=>b.active!==false);el.bannerStrip.classList.toggle("hidden",!rows.length);el.bannerStrip.innerHTML=rows.map(b=>`<button class="hero-banner" data-banner-cat="${b.category_id||"all"}"><strong>${esc(b.title)}</strong>${b.subtitle?`<span>${esc(b.subtitle)}</span>`:""}</button>`).join("");el.bannerStrip.querySelectorAll("[data-banner-cat]").forEach(b=>b.onclick=()=>{setCat(b.dataset.bannerCat);window.scrollTo({top:0,behavior:"smooth"})})}
 function renderRecent(){const rows=state.recent.map(id=>state.products.find(p=>p.id===id)).filter(p=>p&&p.archived!==true&&(canViewInternal()||p.active!==false)).slice(0,8);el.recentSection.classList.toggle("hidden",!rows.length);el.recentGrid.innerHTML=rows.map(p=>productCard(p,true)).join("");bindProductCards(el.recentGrid)}
@@ -236,7 +244,7 @@ function openDetail(id,pushUrl=true){
   const wa=`Здравствуйте! Пришёл с сайта QUATT QURYLYS. Хочу уточнить наличие / заказать: ${p.name}${p.brand?" ("+p.brand+")":""}.\n${productLink(p.id)}`;
   el.detailContent.innerHTML=`
     ${pics.length?`<div class="detail-photos">${pics.map((i,idx)=>`<button data-lightbox-index="${idx}"><img src="${publicUrl(i.image_path)}" alt="${esc(p.name)}"></button>`).join("")}</div>`:`<div class="detail-placeholder">Q</div>`}
-    <div class="detail-buy-row"><div><div class="detail-price">${esc(priceText(p))}${sale?` <span class="old-price big">${money(p.old_price)}</span>`:""}</div><div class="availability-line">${esc(availabilityLabel(p.availability||"order"))}${p.stock_qty!==null&&p.stock_qty!==undefined&&p.stock_qty!==""?` · ${t("Остаток")}: ${Math.max(0,Number(p.stock_qty)||0)} ${t("шт.")}`:""}${p.delivery?` · ${esc(p.delivery)}`:""}</div>${sale&&p.sale_end?`<div class="sale-deadline detail-sale">${esc(saleInfo(p))}</div>`:""}</div><button id="detailWhatsapp" class="whatsapp-btn">WhatsApp</button></div>
+    <div class="detail-buy-row"><div><div class="detail-price">${esc(priceText(p))}${sale?` <span class="old-price big">${money(p.old_price)}</span>`:""}</div><div class="availability-line">${esc(availabilityLabel(p.availability||"order"))}${p.stock_qty!==null&&p.stock_qty!==undefined&&p.stock_qty!==""?` · ${t("Остаток")}: ${Math.max(0,Number(p.stock_qty)||0)} ${t("шт.")}`:""}${p.delivery?` · ${esc(t(p.delivery))}`:""}</div>${sale&&p.sale_end?`<div class="sale-deadline detail-sale">${esc(saleInfo(p))}</div>`:""}</div><button id="detailWhatsapp" class="whatsapp-btn">WhatsApp</button></div>
     ${p.checked_date?`<p class="fine">${t("Цена проверена")}: ${new Date(p.checked_date+"T00:00:00").toLocaleDateString("ru-RU")}</p>`:""}
     <section class="detail-section"><h3>${t("Характеристики")}</h3>${specsHtml(p.specs)}</section>${renderVariants(p)}
     ${videoHtml(p.video_url)}
@@ -377,7 +385,7 @@ el.categoryForm.onsubmit=async e=>{e.preventDefault();try{await addCategory(el.n
 async function renderBannerManager(){el.bannerManager.innerHTML=state.banners.map(b=>`<div class="category-row"><span><b>${esc(b.title)}</b>${b.subtitle?` — ${esc(b.subtitle)}`:""}</span><span class="actions"><button class="small-btn" data-banner-toggle="${b.id}">${b.active?"Скрыть":"Показать"}</button><button class="small-btn danger-lite" data-banner-del="${b.id}">${t("Удалить")}</button></span></div>`).join("");el.bannerManager.querySelectorAll("[data-banner-toggle]").forEach(b=>b.onclick=async()=>{const row=state.banners.find(x=>x.id===b.dataset.bannerToggle);const r=await supabase.from("site_banners").update({active:!row.active}).eq("id",row.id);if(r.error)return toast(r.error.message,true);await loadData();renderBannerManager()});el.bannerManager.querySelectorAll("[data-banner-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Удалить баннер?"))return;const r=await supabase.from("site_banners").delete().eq("id",b.dataset.bannerDel);if(r.error)return toast(r.error.message,true);await loadData();renderBannerManager()})}
 el.bannerForm.onsubmit=async e=>{e.preventDefault();const r=await supabase.from("site_banners").insert({title:el.bannerTitle.value.trim(),subtitle:el.bannerSubtitle.value.trim()||null,category_id:el.bannerCategory.value||null,sort_order:(state.banners.length+1)*10});if(r.error)return toast(r.error.message,true);el.bannerForm.reset();toast("Баннер добавлен");await loadData();renderBannerManager()};
 
-function renderLocalBadges(){el.favoritesBadge.textContent=state.favorites.length;el.favoritesBadge.classList.toggle("hidden",!state.favorites.length);const n=state.customerCart.reduce((a,x)=>a+x.qty,0);el.customerCartBadge.textContent=n;el.customerCartBadge.classList.toggle("hidden",!n)}
+function renderLocalBadges(){syncCustomerNavigation();el.favoritesBadge.textContent=state.favorites.length;el.favoritesBadge.classList.toggle("hidden",!state.favorites.length);const n=state.customerCart.reduce((a,x)=>a+x.qty,0);el.customerCartBadge.textContent=n;el.customerCartBadge.classList.toggle("hidden",!n)}
 function toggleFavorite(id){state.favorites=state.favorites.includes(id)?state.favorites.filter(x=>x!==id):[...state.favorites,id];saveLocal();renderLocalBadges();renderProducts();if(el.favoritesDialog.open)renderFavorites()}
 function renderFavorites(){const rows=state.favorites.map(id=>state.products.find(p=>p.id===id)).filter(p=>p&&p.archived!==true&&(canViewInternal()||p.active!==false));el.favoritesList.innerHTML=rows.length?rows.map(p=>productCard(p,true)).join(""):`<div class="empty compact-empty"><h2>${t("Пока пусто")}</h2><p>${t("Нажмите ♡ на нужных товарах.")}</p></div>`;bindProductCards(el.favoritesList)}
 function addCustomerCart(id){const p=state.products.find(x=>x.id===id);if(!p)return;const row=state.customerCart.find(x=>x.product_id===id);if(row)row.qty++;else state.customerCart.push({product_id:id,name:p.name,price:Number(p.price||0),qty:1});saveLocal();renderLocalBadges();toast("Добавлено в корзину")}
@@ -526,11 +534,11 @@ el.bulkSelectAll.onclick=()=>{const boxes=[...el.bulkProducts.querySelectorAll('
 el.applyBulkBtn.onclick=async()=>{const ids=[...el.bulkProducts.querySelectorAll('input:checked')].map(x=>x.value);if(!ids.length)return toast("Выберите товары",true);if(!confirm(`Изменить ${ids.length} товар(ов)?`))return;try{for(const id of ids){const p=state.products.find(x=>x.id===id),patch={};if(el.bulkCategory.value)patch.category_id=el.bulkCategory.value;if(el.bulkVisibility.value)patch.active=el.bulkVisibility.value==="true";if(el.bulkMarkup.value!==""){const n=Number(el.bulkMarkup.value);patch.markup=n;patch.price=roundRetail(Number(p.cost||0)*(1+n/100))}if(!Object.keys(patch).length)continue;const r=await supabase.from("products").update(patch).eq("id",id);if(r.error)throw r.error}toast("Массовое изменение готово");el.bulkDialog.close();await loadData()}catch(e){toast(e.message||String(e),true)}};
 
 function excelRows(){return state.products.map(p=>({Название:p.name,Категория:catName(p.category_id),Бренд:p.brand||"",Цена:Number(p.price||0),Закуп:Number(p.cost||0),Наценка:Number(p.markup||0),Наличие:availabilityLabel(p.availability||"order"),Остаток:p.stock_qty??"",Архив:p.archived?"Да":"Нет",Характеристики:p.specs||"",Поставщик:p.supplier||"",Адрес_поставщика:p.supplier_address||"",Контакт_поставщика:p.supplier_contact||"",Дата_проверки:p.checked_date||"",Фото:imgsFor(p.id).map(i=>publicUrl(i.image_path)).join("; ")}))}
-function downloadWorkbook(rows,name,sheet="Товары"){if(!window.XLSX)return toast("Модуль Excel ещё загружается. Повтори через секунду.",true);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),sheet);XLSX.writeFile(wb,name)}
+async function downloadWorkbook(rows,name,sheet="Товары"){try{await ensureExcel();}catch(e){toast(e.message,true);return;}const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),sheet);XLSX.writeFile(wb,name)}
 el.exportExcelBtn.onclick=()=>downloadWorkbook(excelRows(),`QUATT_catalog_${new Date().toISOString().slice(0,10)}.xlsx`);
 el.exportSatuBtn.onclick=()=>{const rows=state.products.filter(p=>p.active!==false&&p.archived!==true).map(p=>({Название_позиции:p.name,Название_группы:catName(p.category_id),Бренд:p.brand||"",Цена:Number(p.price||0),Валюта:"KZT",Единица_измерения:"шт.",Наличие:p.availability==="in_stock"?"+":p.availability==="out_of_stock"?"-":"под заказ",Описание:p.specs||"",Ссылка_изображения:imgsFor(p.id).map(i=>publicUrl(i.image_path)).join(", ")}));downloadWorkbook(rows,`QUATT_SATU_PREP_${new Date().toISOString().slice(0,10)}.xlsx`,"Satu")};
 function rowVal(row,names){for(const [k,v] of Object.entries(row)){if(names.some(n=>norm(k)===norm(n)))return v}return ""}
-el.excelImport.onchange=async()=>{const file=el.excelImport.files?.[0];el.excelImport.value="";if(!file)return;if(!window.XLSX)return toast("Модуль Excel ещё загружается",true);if(!confirm("Импортировать товары из файла?"))return;try{const data=await file.arrayBuffer();const wb=XLSX.read(data);const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});let added=0,skipped=0;for(const row of rows){const name=String(rowVal(row,["Название","Наименование","Название товара","name"])).trim();if(!name){skipped++;continue}const brand=String(rowVal(row,["Бренд","brand"])).trim();if(findDuplicate(name,brand,"")){skipped++;continue}const catText=String(rowVal(row,["Категория","Группа","category"])).trim();let cat=state.categories.find(c=>norm(c.name)===norm(catText));if(catText&&!cat)cat=await addCategory(catText);const price=Number(rowVal(row,["Цена","Розничная цена","price"]))||0,cost=Number(rowVal(row,["Закуп","Закупочная цена","cost"]))||0,stockRaw=rowVal(row,["Остаток","Количество","stock_qty"]),stockQty=stockRaw===""?null:Math.max(0,Math.floor(Number(stockRaw)||0)),specs=String(rowVal(row,["Характеристики","Описание","specs"])).trim();const payload={name,brand:brand||null,category_id:cat?.id||null,price,cost,stock_qty:stockQty,markup:cost?((price/cost)-1)*100:0,specs:specs||null,delivery:"1 день",active:true,archived:false,availability:"order",price_mode:"show",keywords:uniq([name,brand,catText,...Object.values(parseSpecs(specs))].join(" ").split(/\s+/)).join(", "),supplier:String(rowVal(row,["Поставщик","supplier"])).trim()||null};const r=await supabase.from("products").insert(payload);if(r.error)throw r.error;added++}toast(`Импорт: добавлено ${added}, пропущено ${skipped}`);await loadData()}catch(e){toast(e.message||String(e),true)}};
+el.excelImport.onchange=async()=>{const file=el.excelImport.files?.[0];el.excelImport.value="";if(!file)return;try{await ensureExcel()}catch(e){toast(e.message,true);return}if(!confirm("Импортировать товары из файла?"))return;try{const data=await file.arrayBuffer();const wb=XLSX.read(data);const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});let added=0,skipped=0;for(const row of rows){const name=String(rowVal(row,["Название","Наименование","Название товара","name"])).trim();if(!name){skipped++;continue}const brand=String(rowVal(row,["Бренд","brand"])).trim();if(findDuplicate(name,brand,"")){skipped++;continue}const catText=String(rowVal(row,["Категория","Группа","category"])).trim();let cat=state.categories.find(c=>norm(c.name)===norm(catText));if(catText&&!cat)cat=await addCategory(catText);const price=Number(rowVal(row,["Цена","Розничная цена","price"]))||0,cost=Number(rowVal(row,["Закуп","Закупочная цена","cost"]))||0,stockRaw=rowVal(row,["Остаток","Количество","stock_qty"]),stockQty=stockRaw===""?null:Math.max(0,Math.floor(Number(stockRaw)||0)),specs=String(rowVal(row,["Характеристики","Описание","specs"])).trim();const payload={name,brand:brand||null,category_id:cat?.id||null,price,cost,stock_qty:stockQty,markup:cost?((price/cost)-1)*100:0,specs:specs||null,delivery:"1 день",active:true,archived:false,availability:"order",price_mode:"show",keywords:uniq([name,brand,catText,...Object.values(parseSpecs(specs))].join(" ").split(/\s+/)).join(", "),supplier:String(rowVal(row,["Поставщик","supplier"])).trim()||null};const r=await supabase.from("products").insert(payload);if(r.error)throw r.error;added++}toast(`Импорт: добавлено ${added}, пропущено ${skipped}`);await loadData()}catch(e){toast(e.message||String(e),true)}};
 
 el.searchInput.oninput=()=>{state.q=el.searchInput.value;el.clearSearchBtn.classList.toggle("hidden",!state.q);renderSearchSuggestions();renderProducts();maybeLogSearch()};el.clearSearchBtn.onclick=()=>{el.searchInput.value="";state.q="";el.clearSearchBtn.classList.add("hidden");el.searchSuggestions.classList.add("hidden");renderProducts()};el.brandFilter.onchange=()=>{state.brand=el.brandFilter.value;renderProducts()};el.availabilityFilter.onchange=()=>{state.availability=el.availabilityFilter.value;renderProducts()};el.maxPrice.oninput=()=>{state.max=el.maxPrice.value;renderProducts()};el.sortFilter.onchange=()=>{state.sort=el.sortFilter.value;renderProducts()};el.mobileCategory.onchange=()=>setCat(el.mobileCategory.value);
 el.loginBtn.onclick=()=>el.loginDialog.showModal();el.loginForm.onsubmit=async e=>{e.preventDefault();el.loginError.textContent="";const {data,error}=await supabase.auth.signInWithPassword({email:el.loginEmail.value.trim(),password:el.loginPassword.value});if(error){el.loginError.textContent=error.message;return}state.session=data.session;state.roleMode="native";el.loginDialog.close();await loadRole();await loadData();refreshOrdersBadge(false)};el.logoutBtn.onclick=async()=>{await supabase.auth.signOut();state.session=null;state.role="guest";state.roleMode="native";state.customerMode=false;state.selectedSellerId=null;state.cart=[];await loadData()};
@@ -629,6 +637,8 @@ function setupMobileCatalogUI(){
   if(!filters||!searchWrap||document.getElementById("mobileFilterToggle"))return;
   const btn=document.createElement("button");
   btn.id="mobileFilterToggle";
+  filters.id="catalogFilters";
+  btn.setAttribute("aria-controls","catalogFilters");
   btn.type="button";
   btn.className="mobile-filter-toggle";
   btn.innerHTML='<span>Фильтры</span><span class="mobile-filter-chevron">⌄</span>';
@@ -636,7 +646,8 @@ function setupMobileCatalogUI(){
   const sync=()=>{
     const open=document.body.classList.contains("mobile-filters-open");
     btn.classList.toggle("active",open);
-    btn.querySelector("span").textContent=open?"Скрыть фильтры":"Фильтры";
+    btn.querySelector("span").textContent=t(open?"Скрыть фильтры":"Фильтры");
+    btn.setAttribute("aria-expanded",String(open));
     btn.querySelector(".mobile-filter-chevron").textContent=open?"⌃":"⌄";
   };
   btn.addEventListener("click",()=>{document.body.classList.toggle("mobile-filters-open");sync()});
@@ -770,6 +781,37 @@ window.addEventListener('offline',()=>toast('Нет подключения к и
 window.addEventListener('online',()=>toast('Интернет снова подключен'));
 
 function setupBackToTop(){if($("backToTop"))return;const b=document.createElement("button");b.id="backToTop";b.type="button";b.className="back-to-top";b.textContent="↑";b.setAttribute("aria-label","Наверх");document.body.appendChild(b);const sync=()=>b.classList.toggle("show",window.scrollY>700);window.addEventListener("scroll",sync,{passive:true});b.onclick=()=>window.scrollTo({top:0,behavior:"smooth"});sync()}
+let excelPromise;
+function ensureExcel(){
+  if(window.XLSX)return Promise.resolve();
+  if(!excelPromise)excelPromise=new Promise((resolve,reject)=>{
+    const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    script.onload=()=>{if(window.XLSX)resolve();else{script.remove();excelPromise=null;reject(new Error("Не удалось загрузить модуль Excel"))}};
+    script.onerror=()=>{script.remove();excelPromise=null;reject(new Error("Не удалось загрузить модуль Excel. Проверьте интернет и повторите."))};
+    document.head.appendChild(script);
+  });
+  return excelPromise;
+}
+function syncCustomerNavigation(){
+  let nav=$("customerNavigation");
+  if(!nav){
+    nav=document.createElement("nav");nav.id="customerNavigation";nav.className="customer-navigation";
+    for(const [id,icon] of [["favoritesBtn","♡"],["customerCartBtn","▢"],["contactsBtn","☎"]]){
+      const b=document.createElement("button");b.type="button";b.dataset.customerTarget=id;
+      b.innerHTML='<span aria-hidden="true">'+icon+'</span><span class="nav-label"></span><span class="nav-count"></span>';
+      b.onclick=()=>el[id].click();nav.appendChild(b);
+    }
+    document.body.appendChild(nav);
+  }
+  nav.classList.toggle("hidden",!!state.session&&!state.customerMode);
+  nav.setAttribute("aria-label",uiLang()==="kk"?"Каталог мәзірі":"Меню каталога");
+  for(const [id,label,count] of [["favoritesBtn","Избранное",state.favorites.length],["customerCartBtn","Корзина",state.customerCart.reduce((n,x)=>n+x.qty,0)],["contactsBtn","Контакты",0]]){
+    const b=nav.querySelector('[data-customer-target="'+id+'"]');
+    b.querySelector(".nav-label").textContent=t(label);b.querySelector(".nav-count").textContent=count||"";
+    b.setAttribute("aria-label",t(label)+(count?": "+count:""));
+  }
+}
+
 async function init(){
   createLaunchSplash();
   setupMobileHeaderUI();
@@ -780,7 +822,6 @@ async function init(){
   setupBackToTop();
   setupInstallPrompt();
   loadLocal();
-  const started=Date.now();
   const {data}=await supabase.auth.getSession();
   state.session=data.session;
   await loadRole();
@@ -790,9 +831,8 @@ async function init(){
     refreshOrdersBadge(false);
     setInterval(()=>refreshOrdersBadge(true),30000)
   }
-  const waitMore=Math.max(0,800-(Date.now()-started));
-  if(waitMore) await sleep(waitMore);
+  // Show the catalogue immediately when its data is ready.
   hideLaunchSplash();
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=281").catch(()=>{})
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=282").catch(()=>{})
 }
 init();

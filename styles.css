@@ -378,3 +378,25 @@ body:has(#installAppBanner) .install-app-dock{bottom:calc(86px + env(safe-area-i
 .upload-actions button:hover{border-color:#111}
 .upload-actions small{color:#888}
 @media(max-width:760px){.upload-actions{flex-direction:column;gap:5px}.upload-actions button{width:100%;max-width:260px}}
+
+/* Catalogue navigation and readable product cards, v2.8.2 */
+.customer-navigation{display:none}
+.product-category,.delivery,.fine{color:#60656c}
+.product .photo{background:#fff}
+.product .photo img{max-width:100%;object-fit:contain}
+.product .card-actions .small-btn{min-height:44px;border-color:#d2c200;background:#fffbe0;color:#171717;font-weight:700}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #9b8500;outline-offset:3px}
+@media(max-width:760px){
+  body.guest-mode,body.customer-mode{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+  .customer-navigation:not(.hidden){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));position:fixed;bottom:0;left:0;right:0;z-index:35;background:#fff;border-top:1px solid #e0e2e5;padding:6px 10px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px #00000008}
+  .customer-navigation button{position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;min-width:0;min-height:54px;border:0;background:#fff;color:#202124;font:600 12px Arial,sans-serif;border-radius:9px}
+  .customer-navigation button>span:first-child{font-size:23px;line-height:24px}
+  .customer-navigation button[data-customer-target="customerCartBtn"]{background:#fff9c4}
+  .customer-navigation .nav-count:not(:empty){position:absolute;top:0;left:calc(50% + 10px);min-width:18px;height:18px;padding:2px 4px;border-radius:12px;background:#171717;color:#fff;font-size:11px}
+  body.guest-mode .header-right #langSwitch:not(.hidden){display:none!important}
+  .guest-mode .back-to-top,.customer-mode .back-to-top{bottom:calc(86px + env(safe-area-inset-bottom))}
+  #detailContent>.detail-photos{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory}
+  #detailContent>.detail-photos button{flex:0 0 100%;scroll-snap-align:start}
+  #detailContent>.detail-photos img{width:100%;height:min(64vw,360px);object-fit:contain;background:#fafafa}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}

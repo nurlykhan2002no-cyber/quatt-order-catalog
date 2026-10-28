@@ -1,7 +1,7 @@
-const CACHE="quatt-catalog-v2.8.1.0";
+const CACHE="quatt-catalog-v2.8.2.0";
 const OFFLINE_URL="./offline.html";
 const ASSETS=[
-  "./","./index.html","./styles.css","./app.js","./config.js",
+  "./","./index.html","./styles.css?v=282","./app.js?v=282","./config.js",
   "./manifest.webmanifest","./quatt-favicon-64.png","./quatt-app-192.png","./quatt-app-512.png",
   "./quatt.gif","./robots.txt","./sitemap.xml",OFFLINE_URL
 ];
