@@ -1,4 +1,4 @@
-import {variantKey,validateVariant,variantSummary} from './variant-model.js?v=288';
+import {variantKey,validateVariant,variantSummary} from './variant-model.js?v=289';
 export function groupVariantImports(rows,products,today,flat,identity,amount){
   const get=(r,...keys)=>{for(const k of keys){const found=Object.entries(r).find(([h,v])=>identity(h).replace(/_/g,' ')===identity(k)&&v!==null&&v!==undefined&&String(v).trim()!=='');if(found)return found[1];}return null;};
   const groups=new Map(),ordinary=[];
@@ -21,7 +21,7 @@ export function groupVariantImports(rows,products,today,flat,identity,amount){
         const old=variants.find(v=>v.id===id)||(unit==='rod'?variants.find(v=>v.unit==='rod'&&String(v.diameter)===diameter&&Number(v.length_m)===length):null),key=old?.id||id;
         const price=amount(get(r,'Цена за метр','Продажа за метр','Продажа за метр, ₸','Цена','Розничная цена')),cost=amount(get(r,'Закуп за метр','Закуп за метр, ₸','Закуп'));
         const avail=identity(get(r,'Наличие')||old?.availability||'order'),available={'в наличии':'in_stock','под заказ':'order','нет в наличии':'out_of_stock',in_stock:'in_stock',order:'order',out_of_stock:'out_of_stock'}[avail];if(!available)throw new Error('Строка '+line+': неверное наличие');
-        const v=validateVariant({...old,id:key,name:String(explicitName||(unit==='rod'?'Ø'+diameter+' мм · '+length+' м':'')),unit,diameter,length_m:unit==='rod'?length:null,price_per_m:unit==='rod'?price??old?.price_per_m:null,price:unit==='piece'?price??old?.price:null,availability:available});
+        const v=validateVariant({...old,id:key,name:String(explicitName||(unit==='rod'?'Ø'+diameter+' мм · '+length+' м':'')),unit,diameter,length_m:unit==='rod'?length:length??old?.length_m??null,price_per_m:unit==='rod'?price??old?.price_per_m:null,price:unit==='piece'?price??old?.price:null,availability:available});
         if(cost===null&&!costs[key])throw new Error('Строка '+line+': укажите закуп для нового размера');if(cost!==null)costs[key]={cost};
         const index=variants.findIndex(x=>x.id===key);if(index<0)variants.push(v);else variants[index]=v;
       }

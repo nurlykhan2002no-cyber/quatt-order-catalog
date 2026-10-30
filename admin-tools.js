@@ -1,4 +1,4 @@
-import {identity,buildImportPlan,priceAge} from './admin-data.js?v=288';
+import {identity,buildImportPlan,priceAge} from './admin-data.js?v=289';
 
 export function setupAdminTools(ctx) {
   const {el,state,canEditProducts,openProduct,publicUrl,imgsFor,toast,supabase,ensureExcel,loadData,addCategory,logProductChange,buildProductChanges,money,esc}=ctx;
@@ -75,7 +75,7 @@ export function setupAdminTools(ctx) {
     }catch(e){$('supplierDirectoryStatus').textContent=e.code==='23505'?'Поставщик с таким названием уже есть.':e.message;}finally{button.disabled=false;}
   };
 
-  const preview=makeDialog('excelPreviewDialog','<div class="modal-head"><div><h2>Предпросмотр импорта Excel</h2><p>До нажатия «Применить выбранное» товары и цены не меняются. Пустые ячейки существующих товаров сохраняют прежние значения. Для прутков цена и закуп указаны за метр; раскройте размеры для проверки цены целого прутка.</p></div><button class="close" type="button" data-dismiss>×</button></div><p id="excelPreviewSummary" role="status"></p><div class="import-options"><label><input id="importSelectUpdates" type="checkbox"> Выбрать существующие товары для обновления</label><label><input id="importPublishNew" type="checkbox"> Показывать новые товары в каталоге сразу</label></div><div class="import-table-wrap"><table class="import-preview-table"><thead><tr><th>Выбрать</th><th>Строка</th><th>Товар / артикул</th><th>Действие</th><th>Розничная цена</th><th>Закуп</th></tr></thead><tbody id="excelPreviewRows"></tbody></table></div><p id="excelImportStatus" role="status"></p><button id="applyExcelPreview" class="primary" type="button">Применить выбранное</button>');
+  const preview=makeDialog('excelPreviewDialog','<div class="modal-head"><div><h2>Предпросмотр импорта Excel</h2><p>До нажатия «Применить выбранное» товары и цены не меняются. Пустые ячейки существующих товаров сохраняют прежние значения. Артикул из Excel сохраняется; у нового товара с пустым артикулом номер QUATT назначится автоматически. Для прутков цена и закуп указаны за метр; раскройте размеры для проверки цены целого прутка.</p></div><button class="close" type="button" data-dismiss>×</button></div><p id="excelPreviewSummary" role="status"></p><div class="import-options"><label><input id="importSelectUpdates" type="checkbox"> Выбрать существующие товары для обновления</label><label><input id="importPublishNew" type="checkbox"> Показывать новые товары в каталоге сразу</label></div><div class="import-table-wrap"><table class="import-preview-table"><thead><tr><th>Выбрать</th><th>Строка</th><th>Товар / артикул</th><th>Действие</th><th>Розничная цена</th><th>Закуп</th></tr></thead><tbody id="excelPreviewRows"></tbody></table></div><p id="excelImportStatus" role="status"></p><button id="applyExcelPreview" class="primary" type="button">Применить выбранное</button>');
   let plan=[],busy=false;
   function renderPreview(){
     const counts={new:0,update:0,error:0};plan.forEach(p=>counts[p.kind]++);
@@ -107,9 +107,9 @@ export function setupAdminTools(ctx) {
         if(item.kind==='new'){item.newId??=crypto.randomUUID();payload.id=item.newId;payload.active=$('importPublishNew').checked;}
         let query=item.target?supabase.from('products').update(payload).eq('id',item.target.id):supabase.from('products').insert(payload);
         if(item.target?.updated_at)query=query.eq('updated_at',item.target.updated_at);
-        const r=await query.select('id');if(r.error)throw new Error('Строка '+item.line+': '+(r.error.code==='23505'?'артикул или товар уже существует':r.error.message));
+        const r=await query.select('id,article');if(r.error)throw new Error('Строка '+item.line+': '+(r.error.code==='23505'?'артикул или товар уже существует':r.error.message));
         if(!r.data?.length)throw new Error('Строка '+item.line+': товар изменён другим сотрудником. Откройте файл заново для свежего предпросмотра.');
-        item.applied=true;item.selected=false;applied++;
+        if(r.data[0].article){payload.article=r.data[0].article;item.sku=r.data[0].article;}item.applied=true;item.selected=false;applied++;
         await logProductChange(item.target?.id||item.newId,payload.name||item.target?.name,item.target?'update':'create',buildProductChanges(item.target,{...item.target,...payload}));
         $('excelImportStatus').textContent='Сохранено карточек: '+applied;
       }

@@ -10,6 +10,7 @@ export function validateVariant(v){
   const unknownPrice=v.unit!=='rod'&&(n===null||n===undefined||n==='');
   if(!unknownPrice&&(n===null||n===undefined||n===''||!Number.isFinite(Number(n))||Number(n)<0))throw new Error('Укажите неотрицательную цену варианта');
   if(!unknownPrice&&Math.abs(roundMoney(n)-Number(n))>0.00000001)throw new Error('Укажите цену с точностью до двух знаков после запятой');
+  if(v.unit!=='rod'&&v.length_m!==''&&v.length_m!=null&&(!Number.isFinite(Number(v.length_m))||Number(v.length_m)<=0))throw new Error('Длина должна быть больше нуля или оставьте поле пустым');
   if(v.unit==='rod'&&(!Number.isFinite(Number(v.length_m))||Number(v.length_m)<=0))throw new Error('Укажите длину прутка больше нуля');
   if(v.unit==='rod'&&!String(v.diameter||'').trim())throw new Error('Укажите диаметр прутка');
   if(!Number.isFinite(piecePrice(v)))throw new Error('Некорректная цена прутка');
