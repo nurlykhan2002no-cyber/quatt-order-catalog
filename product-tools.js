@@ -1,6 +1,7 @@
-import {setupAdminTools} from "./admin-tools.js?v=285";
+import {setupVariantEditor} from "./variant-editor.js?v=288";
+import {setupAdminTools} from "./admin-tools.js?v=288";
 // Product drafts stay in this browser, isolated by the signed-in account.
-const FIELD_IDS = ['fName','fArticle','fCategory','fBrand','fPrice','fPriceMode','fAvailability','fStockQty','fBadge','fDelivery','fOldPrice','fSaleEnd','fSpecs','fVariants','fVideoUrl','fCost','fSupplier','fSupplierAddress','fSupplierContact','fCheckedDate','fNotes','fActive','fRelated','fBundle'];
+const FIELD_IDS = ['fName','fArticle','fCategory','fBrand','fPrice','fPriceMode','fAvailability','fStockQty','fBadge','fDelivery','fOldPrice','fSaleEnd','fSpecs','fVariants','fVariantCosts','fVideoUrl','fCost','fSupplier','fSupplierAddress','fSupplierContact','fCheckedDate','fNotes','fActive','fRelated','fBundle'];
 export function templateFields(name) {
   const n = String(name).toLowerCase();
   if (/унитаз/.test(n)) return ['Размер, мм','Тип выпуска','Установка','Материал','Цвет','Комплектация','Гарантия'];
@@ -18,6 +19,7 @@ export function appendTemplate(specs, fields) {
 }
 export function setupProductTools(ctx) {
   const {el,state,canEditProducts,openProduct,renderFormImages,renderRelationOptions,setSelectedValues,updateMargin,renderBadgePreview,publicUrl,imgsFor,decodeImageSafely,toast}=ctx;
+  const variantEditor=setupVariantEditor(ctx);
   const adminTools=setupAdminTools({...ctx,flushDraft:()=>flush()});
   const $ = id=>document.getElementById(id);
   const status = $('productDraftStatus');
@@ -74,7 +76,7 @@ export function setupProductTools(ctx) {
     key=state.email+':'+(el.productId.value||'new'); baseline=signature(snapshot()); queuedSignature=baseline; lastDraft=null;
     $('restoreProductDraft').hidden=true;
     $('copyProductBtn').hidden=!el.productId.value;
-    refreshTemplate(); adminTools.refresh(); report('Черновик сохраняется в этом браузере вместе с фотографиями.');
+    refreshTemplate(); variantEditor.refresh(); adminTools.refresh(); report('Черновик сохраняется в этом браузере вместе с фотографиями.');
     try{
       const found=await store('readonly',s=>s.get(key));
       if(token!==generation)return;
@@ -101,7 +103,7 @@ export function setupProductTools(ctx) {
       else node.value=String(value??'');
     }
     state.formImages=lastDraft.images.slice(0,5).filter(i=>i.file||state.images.some(current=>current.id===i.id&&current.product_id===el.productId.value)).map(i=>i.file?{file:i.file,preview:URL.createObjectURL(i.file)}:{...i});
-    renderFormImages();updateMargin();renderBadgePreview();refreshTemplate();adminTools.sync();
+    renderFormImages();updateMargin();renderBadgePreview();refreshTemplate();variantEditor.refresh();adminTools.sync();
     baseline=signature(snapshot());queuedSignature=baseline;stopped=false;$('restoreProductDraft').hidden=true;report('Черновик восстановлен. Проверьте данные перед сохранением товара.');
   };
   $('applySpecTemplate').onclick=()=>{
@@ -140,5 +142,5 @@ export function setupProductTools(ctx) {
   el.productDialog.addEventListener('close',()=>flush());
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&el.productDialog.open)flush();});
   window.addEventListener('pagehide',()=>{if(el.productDialog.open)flush();});
-  return {opened,changed,flush,saved,catalogLoaded:()=>adminTools.catalogLoaded()};
+  return {opened,changed,flush,saved,validateVariants:()=>variantEditor.validate(),catalogLoaded:()=>adminTools.catalogLoaded()};
 }

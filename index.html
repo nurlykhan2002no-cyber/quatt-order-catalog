@@ -9,13 +9,13 @@
   <meta property="og:description" content="Строительные товары QUATT QURYLYS · Нұрсая 17 · Атырау · 09:00–21:00">
   <meta property="og:type" content="website">
   <title>QUATT QURYLYS — Каталог товаров</title>
-  <link rel="icon" href="./quatt-favicon-64.png?v=287" type="image/png">
-  <link rel="apple-touch-icon" href="./quatt-apple-180.png?v=287">
+  <link rel="icon" href="./quatt-favicon-64.png?v=288" type="image/png">
+  <link rel="apple-touch-icon" href="./quatt-apple-180.png?v=288">
   <meta name="apple-mobile-web-app-title" content="QUATT">
-  <link rel="manifest" href="./manifest.webmanifest?v=287">
-  <script src="./theme.js?v=287"></script>
-  <link rel="stylesheet" href="./fonts.css?v=287">
-  <link rel="stylesheet" href="./styles.css?v=287">
+  <link rel="manifest" href="./manifest.webmanifest?v=288">
+  <script src="./theme.js?v=288"></script>
+  <link rel="stylesheet" href="./fonts.css?v=288">
+  <link rel="stylesheet" href="./styles.css?v=288">
 </head>
 <body>
   <div id="toastHost" class="toast-host"></div>
@@ -157,7 +157,7 @@
       <label>Артикул<input id="fArticle" maxlength="120" placeholder="Например, ROMANS-001"></label>
       <div id="duplicateProductHint" class="wide duplicate-hint" hidden role="status"></div>
       <label>Бренд<input id="fBrand"></label>
-      <label>Розничная цена, ₸ *<input id="fPrice" type="number" min="0" step="100" required></label>
+      <label>Розничная цена, ₸ *<input id="fPrice" type="number" min="0" step="0.01" required></label>
       <label>Как показывать цену<select id="fPriceMode" class="choice"><option value="show">Обычная цена</option><option value="from">Цена от</option><option value="ask">Уточнить цену</option></select></label>
       <label>Наличие<select id="fAvailability" class="choice"><option value="order">Под заказ</option><option value="in_stock">В наличии</option><option value="out_of_stock">Нет в наличии</option></select></label>
       <label>Остаток, шт.<input id="fStockQty" type="number" min="0" step="1" placeholder="Например, 12"></label>
@@ -194,7 +194,7 @@
     <section id="sellerNamesSection"><h3>Имена продавцов</h3><p class="section-help">Одна общая учётка продавцов, но корзины и заказы разделяются по выбранному имени.</p><form id="sellerNameForm" class="category-form"><input id="newSellerName" placeholder="Имя продавца" required><button class="primary" type="submit">Добавить</button></form><div id="sellerNamesList"></div></section>
     <section><h3>Категории</h3><form id="categoryForm" class="category-form"><input id="newCategoryName" placeholder="Новая категория" required><button class="primary" type="submit">Добавить</button></form><div id="categoryManager"></div></section>
     <section><h3>Баннеры главной</h3><form id="bannerForm" class="banner-form"><input id="bannerTitle" placeholder="Заголовок" required><input id="bannerSubtitle" placeholder="Подзаголовок"><select id="bannerCategory" class="choice"></select><button class="primary" type="submit">Добавить</button></form><div id="bannerManager"></div></section>
-    <section><h3>Импорт / экспорт</h3><div class="action-row"><label class="file-btn">Импорт Excel<input id="excelImport" type="file" accept=".xlsx,.xls,.csv"></label><button id="exportExcelBtn" class="small-btn">Экспорт Excel</button><button id="exportSatuBtn" class="small-btn">Экспорт для Satu.kz</button></div><p class="fine">Колонки: Артикул, Название, Категория, Бренд, Цена, Закуп, Характеристики, Поставщик. Сначала откроется предпросмотр. Существующие товары обновятся только после вашего выбора; пустые ячейки сохранят прежние данные.</p></section>
+    <section><h3>Импорт / экспорт</h3><div class="action-row"><label class="file-btn">Импорт Excel<input id="excelImport" type="file" accept=".xlsx,.xls,.csv"></label><a class="file-btn" href="./quatt-variants-template.xlsx" download>Скачать шаблон размеров</a><button id="exportExcelBtn" class="small-btn">Экспорт Excel</button><button id="exportSatuBtn" class="small-btn">Экспорт для Satu.kz</button></div><p class="fine">Колонки: Артикул, Название, Категория, Бренд, Цена, Закуп, Характеристики, Поставщик. Для размеров скачайте шаблон: одна строка — один диаметр и длина, одинаковая группа — одна карточка. Сначала откроется предпросмотр. Существующие товары обновятся только после вашего выбора; пустые ячейки сохранят прежние данные.</p></section>
   </div></dialog>
 
 
@@ -212,6 +212,6 @@
 
   <dialog id="bulkDialog" aria-label="Массовое редактирование"><div class="modal-card bulk-modal"></div></dialog>
 
-  <script type="module" src="./app.js?v=287"></script>
+  <script type="module" src="./app.js?v=288"></script>
 </body>
 </html>

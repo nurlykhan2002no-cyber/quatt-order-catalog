@@ -1,4 +1,5 @@
 export function bulkPatch(product, action, value, roundRetail) {
+  if(["markup","percent","fixed","availability"].includes(action)&&Array.isArray(product.variants)&&product.variants.length)throw new Error("Товар с размерами: измените цены и наличие в карточке или через Excel");
   const patch={};
   if(action==='category')patch.category_id=value;
   else if(action==='visibility')patch.active=value==='true';

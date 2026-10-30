@@ -1,3 +1,4 @@
+import {groupVariantImports} from "./variant-import.js?v=288";
 export const identity = value=>String(value??'').normalize('NFKC').trim().toLocaleLowerCase('ru').replace(/\s+/g,' ');
 export function priceAge(date, today=new Date()) {
   if(!date)return null;
@@ -17,7 +18,7 @@ function cell(row, aliases) {
   for(const key of aliases){const value=normalized[identity(key).replace(/_/g,' ')];if(value!==undefined&&String(value).trim()!=='')return value;}
   return null;
 }
-export function buildImportPlan(rows, products, today) {
+export function buildFlatImportPlan(rows, products, today) {
   const seen=new Set();
   return rows.map((row,index)=>{
     const item={line:index+2,source:row,errors:[],selected:false,applied:false};
@@ -63,3 +64,5 @@ export function buildImportPlan(rows, products, today) {
     return item;
   });
 }
+
+export function buildImportPlan(rows,products,today){return groupVariantImports(rows,products,today,buildFlatImportPlan,identity,parseAmount);}
