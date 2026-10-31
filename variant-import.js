@@ -1,5 +1,5 @@
-import {attributeFields,attributeSignature,normalizeSize,saleUnits} from './variant-attributes.js?v=296';
-import {variantKey,validateVariant,variantSummary,parseVariantLength,isRateUnit} from './variant-model.js?v=296';
+import {attributeFields,attributeSignature,normalizeSize,saleUnits} from './variant-attributes.js?v=297';
+import {variantKey,validateVariant,variantSummary,parseVariantLength,isRateUnit} from './variant-model.js?v=297';
 export function groupVariantImports(rows,products,today,flat,identity,amount){
   const get=(r,...keys)=>{for(const k of keys){const found=Object.entries(r).find(([h,v])=>identity(h).replace(/_/g,' ')===identity(k)&&v!==null&&v!==undefined&&String(v).trim()!=='');if(found)return found[1];}return null;};
   const rejected=rows.filter(r=>get(r,'Ошибка импорта')).map(r=>({line:(Number.isInteger(Number(get(r,'Исходная строка')))?Number(get(r,'Исходная строка')):'—'),source:r,name:String(get(r,'Группа вариантов')||'Строка импорта'),sku:'',kind:'error',selected:false,applied:false,errors:[String(get(r,'Ошибка импорта'))]}));
@@ -33,7 +33,7 @@ export function groupVariantImports(rows,products,today,flat,identity,amount){
         const index=variants.findIndex(x=>x.id===key);if(index<0)variants.push(v);else variants[index]=v;
       }
       const summary=variantSummary({variants}),summaryCost=Math.min(...Object.values(costs).map(v=>Number(v.cost)).filter(Number.isFinite));
-      const metadata={...first.row};for(const field of ['Категория','Поставщик','Адрес поставщика','Контакт поставщика','Дата проверки']){const values=[...new Set(records.map(x=>get(x.row,field)).filter(v=>v!==null).map(String))];if(values.length>1)throw new Error('В группе отличаются значения: '+field);if(values.length)metadata[field]=values[0];}
+      const metadata={...first.row};for(const field of ['Название на казахском','Категория','Поставщик','Адрес поставщика','Контакт поставщика','Дата проверки']){const values=[...new Set(records.map(x=>get(x.row,field)).filter(v=>v!==null).map(String))];if(values.length>1)throw new Error('В группе отличаются значения: '+field);if(values.length)metadata[field]=values[0];}
       const synthetic={...metadata,Артикул:first.article,Название:String(first.group),Бренд:first.brand,Цена:summary.price,Закуп:Number.isFinite(summaryCost)?summaryCost:target?.cost||0};
       const base=flat([synthetic],products,today)[0];if(base.errors.length)throw new Error(base.errors.join('; '));
       Object.assign(item,base,{line:records.map(x=>x.line).join(', '),source:first.row,variantInfo:records.length+' размеров из файла · всего в карточке: '+variants.length});

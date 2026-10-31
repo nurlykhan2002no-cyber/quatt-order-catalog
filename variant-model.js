@@ -1,4 +1,4 @@
-import {fractionalUnit,saleUnits,variantDetails} from './variant-attributes.js?v=296';
+import {fractionalUnit,saleUnits,variantDetails} from './variant-attributes.js?v=297';
 export const roundMoney=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
 export const variantKey=v=>v.id||[v.unit||'piece',v.diameter||'',v.length_m||'',v.name||''].join(':');
 export const cartKey=row=>row.variant_id?row.product_id+'::'+row.variant_id:row.product_id;
@@ -45,7 +45,7 @@ export function variantCartRow(p,v,qty=1){
   if(unknownRodLength(v))throw new Error('Сначала уточните длину прутка');
   if(v.price===null)throw new Error('Сначала уточните цену варианта');
   if(!validVariantQty(v,qty))throw new Error(fractionalUnit(v.unit)?'Укажите количество до 100000, не больше трёх знаков после запятой':'Укажите целое количество от 1 до 100000');
-  return {product_id:p.id,variant_id:v.id,name:p.name+' — '+v.name+(variantDetails(v)?' · '+variantDetails(v):''),price:piecePrice(v),qty,unit:v.unit||'piece',length_m:['rod','coil'].includes(v.unit)?Number(v.length_m):null};
+  return {product_id:p.id,variant_id:v.id,name_ru:p.name+' — '+v.name+(variantDetails(v)?' · '+variantDetails(v):''),name_kk:p.name_kk?p.name_kk+' — '+v.name+(variantDetails(v)?' · '+variantDetails(v):''):null,name:p.name+' — '+v.name+(variantDetails(v)?' · '+variantDetails(v):''),price:piecePrice(v),qty,unit:v.unit||'piece',length_m:['rod','coil'].includes(v.unit)?Number(v.length_m):null};
 }
 export function parseVariants(text){
   text=String(text||'').trim();if(!text)return [];

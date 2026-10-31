@@ -1,5 +1,6 @@
-import {variantDetails,fractionalUnit} from './variant-attributes.js?v=296';
-import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=296';
+import {localizedProductName} from './product-language.js?v=297';
+import {variantDetails,fractionalUnit} from './variant-attributes.js?v=297';
+import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=297';
 export function bindVariantPicker({p,root,money,esc,kk,addCustomer,addSeller,whatsapp,message}){
   const variants=variantsOf(p).flatMap(v=>v.unit==='rod'&&v.length_options?.length?v.length_options.map(n=>({...v,id:v.id+'@length:'+n,length_m:n,name:v.name+' · '+n+' м'})): [v]);if(!variants.length)return;
   const host=root.querySelector('#variantPicker');if(!host)return;let selected=null;
@@ -39,7 +40,7 @@ export function bindVariantPicker({p,root,money,esc,kk,addCustomer,addSeller,wha
   const seller=root.querySelector('#addToCartFromDetail');if(seller)seller.onclick=()=>{if(!seller.disabled)addSeller(selected,quantity());};
   if(wa)wa.onclick=()=>{
     if(wa.disabled||!selected)return;
-    const prefix=message({...p,name:p.name+' — '+selected.name.replace(/Длина уточняется/gi,lengthLabel)+(variantDetails(selected)?' · '+variantDetails(selected):'')});
+    const prefix=message({...p,name_kk:null,name:localizedProductName(p,kk)+' — '+selected.name.replace(/Длина уточняется/gi,lengthLabel)+(variantDetails(selected)?' · '+variantDetails(selected):'')});
     if(unknownRodLength(selected))return whatsapp(prefix+'\n'+lengthLabel+'\n'+(kk?'Бағасы: ':'Цена: ')+(selected.unit==='rod'?money(selected.price_per_m)+' / м':selected.price==null?(kk?'нақтыланады':'уточняется'):money(selected.price)+' / '+unitLabel(selected.unit,kk))+'\n'+(kk?'Қолда бар ұзындығы мен толық құнын айтыңызшы.':'Подскажите доступную длину и стоимость целого прутка.'));
     whatsapp(prefix+'\n'+(kk?'Саны: ':'Количество: ')+quantity()+' '+(selected.unit==='rod'?rodWord(quantity()):quantityUnitLabel(selected.unit,quantity(),kk))+(['rod','coil'].includes(selected.unit)?' · '+Math.round(quantity()*selected.length_m*1000)/1000+' м':'')+'\n'+(kk?'Сома: ':'Сумма: ')+(selected.price===null?(kk?'Бағасын нақтылаңыз':'Цена уточняется'):money(roundMoney(piecePrice(selected)*quantity()))));
   };

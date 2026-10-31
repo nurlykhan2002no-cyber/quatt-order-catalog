@@ -1,7 +1,7 @@
-import {setupVariantEditor} from "./variant-editor.js?v=296";
-import {setupAdminTools} from "./admin-tools.js?v=296";
+import {setupVariantEditor} from "./variant-editor.js?v=297";
+import {setupAdminTools} from "./admin-tools.js?v=297";
 // Product drafts stay in this browser, isolated by the signed-in account.
-const FIELD_IDS = ['fName','fArticle','fCategory','fBrand','fPrice','fPriceMode','fAvailability','fStockQty','fBadge','fDelivery','fOldPrice','fSaleEnd','fSpecs','fVariants','fVariantCosts','fVideoUrl','fCost','fSupplier','fSupplierAddress','fSupplierContact','fCheckedDate','fNotes','fActive','fRelated','fBundle'];
+const FIELD_IDS = ['fName','fNameKk','fArticle','fCategory','fBrand','fPrice','fPriceMode','fAvailability','fStockQty','fBadge','fDelivery','fOldPrice','fSaleEnd','fSpecs','fVariants','fVariantCosts','fVideoUrl','fCost','fSupplier','fSupplierAddress','fSupplierContact','fCheckedDate','fNotes','fActive','fRelated','fBundle'];
 export function templateFields(name) {
   const n = String(name).toLowerCase();
   if (/унитаз/.test(n)) return ['Размер, мм','Тип выпуска','Установка','Материал','Цвет','Комплектация','Гарантия'];

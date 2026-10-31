@@ -1,4 +1,4 @@
-import {groupVariantImports} from "./variant-import.js?v=296";
+import {groupVariantImports} from "./variant-import.js?v=297";
 export const identity = value=>String(value??'').normalize('NFKC').trim().toLocaleLowerCase('ru').replace(/\s+/g,' ');
 export function priceAge(date, today=new Date()) {
   if(!date)return null;
@@ -44,7 +44,7 @@ export function buildFlatImportPlan(rows, products, today) {
       const payload={};
       if(name)payload.name=name;if(sku)payload.article=sku;if(brand)payload.brand=brand;
       if(price!==null)payload.price=price;if(cost!==null)payload.cost=cost;if(stock!==null)payload.stock_qty=stock;
-      for(const [key,aliases] of Object.entries({specs:['Характеристики','Описание','specs'],supplier:['Поставщик','supplier'],supplier_address:['Адрес поставщика','supplier_address'],supplier_contact:['Контакт поставщика','supplier_contact'],delivery:['Срок поставки','delivery']})){
+      for(const [key,aliases] of Object.entries({name_kk:['Название на казахском','Название KZ','name_kk'],specs:['Характеристики','Описание','specs'],supplier:['Поставщик','supplier'],supplier_address:['Адрес поставщика','supplier_address'],supplier_contact:['Контакт поставщика','supplier_contact'],delivery:['Срок поставки','delivery']})){
         const value=cell(row,aliases);if(value!==null)payload[key]=String(value).trim();
       }
       const category=String(cell(row,['Категория','Группа','category'])??'').trim();
