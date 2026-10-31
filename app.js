@@ -1,9 +1,9 @@
-import {setupProductEditorControls} from './product-editor-controls.js?v=303';
-import {localizedProductName,localizedCartName} from './product-language.js?v=303';
-import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=303';
-import {bindDialogBackdrop} from "./dialog-dismiss.js?v=303";
-import {variantsOf,variantSummary,parseVariants,variantCartRow,cartKey as lineKey,roundMoney,unitLabel,quantityUnitLabel,isRateUnit} from "./variant-model.js?v=303";
-import {bindVariantPicker} from "./variant-picker.js?v=303";
+import {setupProductEditorControls} from './product-editor-controls.js?v=304';
+import {localizedProductName,localizedCartName} from './product-language.js?v=304';
+import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=304';
+import {bindDialogBackdrop} from "./dialog-dismiss.js?v=304";
+import {variantsOf,variantSummary,parseVariants,variantCartRow,cartKey as lineKey,roundMoney,unitLabel,quantityUnitLabel,isRateUnit} from "./variant-model.js?v=304";
+import {bindVariantPicker} from "./variant-picker.js?v=304";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_BUCKET } from "./config.js";
 
@@ -161,7 +161,7 @@ function loadLocal(){try{state.favorites=JSON.parse(localStorage.getItem("quatt-
 async function loadRole(){if(!state.session){state.role="guest";state.email="";return}state.email=state.session.user.email||"";const {data,error}=await supabase.rpc("catalog_role");if(error){console.warn(error);state.role="seller";return}state.role=data||"seller"}
 async function ensureProductTools(){
   if(productTools)return;
-  if(!productToolsPromise)productToolsPromise=import("./product-tools.js?v=303").then(({setupProductTools})=>{
+  if(!productToolsPromise)productToolsPromise=import("./product-tools.js?v=304").then(({setupProductTools})=>{
     productTools=setupProductTools({el,state,canEditProducts,openProduct,renderFormImages,renderRelationOptions,setSelectedValues,updateMargin,renderBadgePreview,publicUrl,imgsFor,decodeImageSafely,toast,supabase,ensureExcel,loadData,addCategory,logProductChange,buildProductChanges,money,esc,render});
   }).catch(e=>{console.warn(e);productToolsPromise=null;$("productDraftStatus").textContent="Автосохранение недоступно: обновите страницу при подключении к интернету.";toast("Не удалось загрузить инструменты добавления товаров.",true)});
   return productToolsPromise;
@@ -227,7 +227,7 @@ function renderCategories(){
   el.fCategory.innerHTML=cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
   el.bannerCategory.innerHTML=`<option value="">Без категории</option>`+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
 }
-function setCat(v){state.cat=v;state.specFilters={};renderCategories();renderProducts()}
+function setCat(v){state.cat=v;state.specFilters={};renderCategories();renderProducts();window.scrollTo({top:0,left:0,behavior:"instant"})}
 function parseSpecs(text){const o={};String(text||"").split(/\r?\n/).forEach(line=>{const m=line.match(/^\s*([^:—-]{2,40})\s*[:—-]\s*(.+)\s*$/);if(m)o[m[1].trim()]=m[2].trim()});return o}
 function commonSpecKey(k){const n=norm(k);if(n.includes("цвет"))return "Цвет";if(n.includes("размер"))return "Размер";if(n.includes("диаметр")||n==="d")return "Диаметр";if(n.includes("мощност"))return "Мощность";if(n.includes("материал"))return "Материал";return null}
 function renderFilters(){
@@ -564,7 +564,7 @@ async function openDashboard(refreshOnly=false){
     renderProducts();
   }catch(e){el.dashboardContent.innerHTML=`<p class="error-text">${esc(e.message||e)}</p>`}
 }
-let bulkTools=null; async function openBulk(){if(!canEditProducts())return;try{if(!bulkTools){const {setupBulkTools}=await import("./bulk-tools.js?v=303");bulkTools=setupBulkTools({el,state,canEditProducts,money,esc,catName,imgsFor,publicUrl,roundRetail,supabase,loadData,logProductChange,buildProductChanges});}bulkTools.open();}catch(e){toast(e.message||"Не удалось открыть массовое редактирование",true)}}
+let bulkTools=null; async function openBulk(){if(!canEditProducts())return;try{if(!bulkTools){const {setupBulkTools}=await import("./bulk-tools.js?v=304");bulkTools=setupBulkTools({el,state,canEditProducts,money,esc,catName,imgsFor,publicUrl,roundRetail,supabase,loadData,logProductChange,buildProductChanges});}bulkTools.open();}catch(e){toast(e.message||"Не удалось открыть массовое редактирование",true)}}
 
 function excelRows(){return state.products.flatMap(p=>variantsOf(p).length?variantsOf(p).map(v=>({"Группа вариантов":p.name,"Название на казахском":p.name_kk||"","Артикул карточки":p.article||"",Категория:catName(p.category_id),Бренд:p.brand||"","Артикул варианта":v.id,"Единица продажи":(saleUnits[v.unit]||"Штука"),Вариант:v.name,...Object.fromEntries(editorAttributeFields.map(([key,label])=>[label,v[key]??""])),"Размер / Ду, мм":v.diameter||"","Длина прутка, м":v.length_unknown?"Длина уточняется":v.length_options?.join("/")||v.length_m||"",Цена:isRateUnit(v)?v.price_per_m:v.price,Закуп:p.variant_costs?.[v.id]?.cost??"",Наличие:availabilityLabel(v.availability||"order"),Поставщик:p.supplier||"",Дата_проверки:p.checked_date||""})):[({Артикул:p.article||"",Название:p.name,"Название на казахском":p.name_kk||"",Категория:catName(p.category_id),Бренд:p.brand||"",Цена:Number(p.price||0),Закуп:Number(p.cost||0),Наценка:Number(p.markup||0),Наличие:availabilityLabel(p.availability||"order"),Остаток:p.stock_qty??"",Архив:p.archived?"Да":"Нет",Характеристики:p.specs||"",Поставщик:p.supplier||"",Адрес_поставщика:p.supplier_address||"",Контакт_поставщика:p.supplier_contact||"",Дата_проверки:p.checked_date||"",Фото:imgsFor(p.id).map(i=>publicUrl(i.image_path)).join("; ")})])}
 async function downloadWorkbook(rows,name,sheet="Товары"){try{await ensureExcel();}catch(e){toast(e.message,true);return;}const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),sheet);XLSX.writeFile(wb,name)}
@@ -696,7 +696,7 @@ function createLaunchSplash(){
   wrap.className='launch-splash';
   wrap.innerHTML=`
     <div class="launch-splash__inner">
-      <img class="launch-splash__logo" src="./quatt-app-192.png?v=303" alt="QUATT">
+      <img class="launch-splash__logo" src="./quatt-app-192.png?v=304" alt="QUATT">
       <div class="launch-splash__brand">QUATT QURYLYS</div>
       <div class="launch-splash__sub">${state.lang==="kk"?"Жөндеу мен құрылысқа қажеттінің бәрі":"Всё для ремонта и строительства"}</div><div class="launch-splash__loading" role="status">${state.lang==="kk"?"Каталог жүктелуде…":"Загружаем каталог…"}</div>
       <div class="launch-splash__dots" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -866,6 +866,6 @@ async function init(){
   }
   // Show the catalogue immediately when its data is ready.
   hideLaunchSplash();
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=303").catch(()=>{})
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=304").catch(()=>{})
 }
 init();

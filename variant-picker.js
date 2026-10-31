@@ -1,6 +1,6 @@
-import {localizedProductName} from './product-language.js?v=303';
-import {variantDetails,fractionalUnit} from './variant-attributes.js?v=303';
-import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=303';
+import {localizedProductName} from './product-language.js?v=304';
+import {variantDetails,fractionalUnit} from './variant-attributes.js?v=304';
+import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=304';
 export function bindVariantPicker({p,root,money,esc,kk,addCustomer,addSeller,whatsapp,message}){
   const variants=variantsOf(p).flatMap(v=>v.unit==='rod'&&v.length_options?.length?v.length_options.map(n=>({...v,id:v.id+'@length:'+n,length_m:n,name:v.name+' · '+n+' м'})): [v]);if(!variants.length)return;
   const host=root.querySelector('#variantPicker');if(!host)return;let selected=null;
