@@ -1,4 +1,4 @@
-import {groupVariantImports} from "./variant-import.js?v=305";
+import {groupVariantImports} from "./variant-import.js?v=306";
 export const identity = value=>String(value??'').normalize('NFKC').trim().toLocaleLowerCase('ru').replace(/\s+/g,' ');
 export function priceAge(date, today=new Date()) {
   if(!date)return null;
@@ -65,4 +65,24 @@ export function buildFlatImportPlan(rows, products, today) {
   });
 }
 
-export function buildImportPlan(rows,products,today,options={}){return groupVariantImports(rows,products,today,buildFlatImportPlan,identity,parseAmount,options);}
+export function buildImportPlan(rows,products,today,options={}){
+  const plan=groupVariantImports(rows,products,today,buildFlatImportPlan,identity,parseAmount,options);
+  for(const item of plan){
+    if(item.kind==='error')continue;
+    const payload=item.payload,name=identity(payload.supplier??item.target?.supplier);
+    if(!name)continue;
+    const sameSupplier=name===identity(item.target?.supplier);
+    const directory=(options.suppliers||[]).filter(s=>identity(s.name)===name);
+    const previous=products.filter(p=>identity(p.supplier)===name);
+    item.supplierAutofilled=[];
+    for(const [field,key,label] of [['supplier_address','address','адрес'],['supplier_contact','contact','контакт']]){
+      // Excel wins. Existing details remain when this supplier has not changed.
+      if(String(payload[field]??'').trim()||(sameSupplier&&String(item.target?.[field]??'').trim()))continue;
+      const saved=[...new Set(directory.map(s=>String(s[key]||'').trim()).filter(Boolean))];
+      const legacy=[...new Set(previous.map(p=>String(p[field]||'').trim()).filter(Boolean))];
+      const candidates=saved.length?saved:legacy;
+      if(candidates.length===1){payload[field]=candidates[0];item.supplierAutofilled.push(label);}
+    }
+  }
+  return plan;
+}
