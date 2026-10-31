@@ -1,4 +1,4 @@
-import {groupVariantImports} from "./variant-import.js?v=299";
+import {groupVariantImports} from "./variant-import.js?v=300";
 export const identity = value=>String(value??'').normalize('NFKC').trim().toLocaleLowerCase('ru').replace(/\s+/g,' ');
 export function priceAge(date, today=new Date()) {
   if(!date)return null;
@@ -65,4 +65,4 @@ export function buildFlatImportPlan(rows, products, today) {
   });
 }
 
-export function buildImportPlan(rows,products,today){return groupVariantImports(rows,products,today,buildFlatImportPlan,identity,parseAmount);}
+export function buildImportPlan(rows,products,today,options={}){return groupVariantImports(rows,products,today,buildFlatImportPlan,identity,parseAmount,options);}
