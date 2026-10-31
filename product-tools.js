@@ -1,5 +1,5 @@
-import {setupVariantEditor} from "./variant-editor.js?v=298";
-import {setupAdminTools} from "./admin-tools.js?v=298";
+import {setupVariantEditor} from "./variant-editor.js?v=299";
+import {setupAdminTools} from "./admin-tools.js?v=299";
 // Product drafts stay in this browser, isolated by the signed-in account.
 const FIELD_IDS = ['fName','fNameKk','fArticle','fCategory','fBrand','fPrice','fPriceMode','fAvailability','fStockQty','fBadge','fDelivery','fOldPrice','fSaleEnd','fSpecs','fVariants','fVariantCosts','fVideoUrl','fCost','fSupplier','fSupplierAddress','fSupplierContact','fCheckedDate','fNotes','fActive','fRelated','fBundle'];
 export function templateFields(name) {
