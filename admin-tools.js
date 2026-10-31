@@ -1,5 +1,6 @@
-import {isRateUnit,unitLabel} from './variant-model.js?v=290';
-import {identity,buildImportPlan,priceAge} from './admin-data.js?v=290';
+import {recognizeMetalPrice,convertMetalPrice} from './supplier-import.js?v=293';
+import {isRateUnit,unitLabel} from './variant-model.js?v=293';
+import {identity,buildImportPlan,priceAge} from './admin-data.js?v=293';
 
 export function setupAdminTools(ctx) {
   const {el,state,canEditProducts,openProduct,publicUrl,imgsFor,toast,supabase,ensureExcel,loadData,addCategory,logProductChange,buildProductChanges,money,esc}=ctx;
@@ -76,15 +77,18 @@ export function setupAdminTools(ctx) {
     }catch(e){$('supplierDirectoryStatus').textContent=e.code==='23505'?'Поставщик с таким названием уже есть.':e.message;}finally{button.disabled=false;}
   };
 
-  const preview=makeDialog('excelPreviewDialog','<div class="modal-head"><div><h2>Предпросмотр импорта Excel</h2><p>До нажатия «Применить выбранное» товары и цены не меняются. Пустые ячейки существующих товаров сохраняют прежние значения. Артикул из Excel сохраняется; у нового товара с пустым артикулом номер QUATT назначится автоматически. Для немерной длины укажите «н/м» или «Длина уточняется»: стоимость целого прутка будет уточняться через WhatsApp. Для прутков цена и закуп указаны за метр; раскройте размеры для проверки цены целого прутка.</p></div><button class="close" type="button" data-dismiss>×</button></div><p id="excelPreviewSummary" role="status"></p><div class="import-options"><label><input id="importSelectUpdates" type="checkbox"> Выбрать существующие товары для обновления</label><label><input id="importPublishNew" type="checkbox"> Показывать новые товары в каталоге сразу</label></div><div class="import-table-wrap"><table class="import-preview-table"><thead><tr><th>Выбрать</th><th>Строка</th><th>Товар / артикул</th><th>Действие</th><th>Розничная цена</th><th>Закуп</th></tr></thead><tbody id="excelPreviewRows"></tbody></table></div><p id="excelImportStatus" role="status"></p><button id="applyExcelPreview" class="primary" type="button">Применить выбранное</button>');
-  let plan=[],busy=false;
+  const preview=makeDialog('excelPreviewDialog','<div class="modal-head"><div><h2>Предпросмотр импорта Excel</h2><p>До нажатия «Применить выбранное» товары и цены не меняются. Пустые ячейки существующих товаров сохраняют прежние значения. Артикул из Excel сохраняется; у нового товара с пустым артикулом номер QUATT назначится автоматически. Для немерной длины укажите «н/м» или «Длина уточняется»: стоимость целого прутка будет уточняться через WhatsApp. Для прутков цена и закуп указаны за метр; раскройте размеры для проверки цены целого прутка.</p></div><button class="close" type="button" data-dismiss>×</button></div><div id="supplierPriceOptions" hidden><p>Прайс Металлсервис: закупочные цены. Бухты по весу — за кг, листы и сетки — за целое изделие. Все товары из прайса отмечены «Под заказ»: наличие нужно проверить.</p><label>Наценка к закупу, %<input id="supplierMarkup" type="number" min="0" max="10000" step="0.01" placeholder="Введите явно, например 30"></label><button id="recalculateSupplier" type="button" class="small-btn">Пересчитать предпросмотр</button><p id="supplierWarnings" role="status"></p></div><p id="excelPreviewSummary" role="status"></p><div class="import-options"><label><input id="importSelectUpdates" type="checkbox"> Выбрать существующие товары для обновления</label><label><input id="importPublishNew" type="checkbox"> Показывать новые товары в каталоге сразу</label></div><div class="import-table-wrap"><table class="import-preview-table"><thead><tr><th>Выбрать</th><th>Строка</th><th>Товар / артикул</th><th>Действие</th><th>Розничная цена</th><th>Закуп</th></tr></thead><tbody id="excelPreviewRows"></tbody></table></div><p id="excelImportStatus" role="status"></p><button id="applyExcelPreview" class="primary" type="button">Применить выбранное</button>');
+  let plan=[],busy=false,supplierMatrix=null,supplierDirty=false;
+  function supplierPlan(){supplierDirty=false;const converted=convertMetalPrice(supplierMatrix,$('supplierMarkup').value);plan=converted.hasMarkup?buildImportPlan(converted.rows,state.products,localDay()):[];$('excelImportStatus').textContent=converted.hasMarkup?'':'Введите наценку и нажмите «Пересчитать предпросмотр».';$('supplierWarnings').textContent='Распознано товарных строк: '+converted.sourceCount+'. '+converted.warnings.join(' ');$('importSelectUpdates').checked=false;renderPreview();}
+  $('recalculateSupplier').onclick=supplierPlan;
+  $('supplierMarkup').oninput=()=>{if(supplierMatrix){supplierDirty=true;plan.forEach(p=>p.selected=false);$('excelImportStatus').textContent='Наценка изменена. Нажмите «Пересчитать предпросмотр».';$('applyExcelPreview').disabled=true;}};
   function renderPreview(){
-    const counts={new:0,update:0,error:0};plan.forEach(p=>counts[p.kind]++);
+    $('supplierMarkup').disabled=busy;$('recalculateSupplier').disabled=busy;const counts={new:0,update:0,error:0};plan.forEach(p=>counts[p.kind]++);
     $('excelPreviewSummary').textContent='Новых: '+counts.new+' · Совпадений: '+counts.update+' · Ошибок: '+counts.error+'. Размеры одной группы объединяются в одну карточку. Новые карточки скрыты, пока не включён показ выше.';
     $('excelPreviewRows').innerHTML=plan.map((p,i)=>'<tr class="import-row-'+p.kind+'"><td><input type="checkbox" aria-label="Выбрать строку '+p.line+'" data-import-index="'+i+'" '+(p.selected?'checked':'')+' '+(p.kind==='error'||p.applied||busy?'disabled':'')+'></td><td>'+p.line+'</td><td><b>'+esc(p.name||String(p.source['Название']||'Без названия'))+'</b><small>'+esc(p.sku||'Без артикула')+'</small>'+(p.variantInfo?'<p class="fine">'+esc(p.variantInfo)+'</p><details><summary>Размеры и цены</summary>'+p.payload.variants.map(v=>'<div>'+esc(v.name)+' · '+esc((isRateUnit(v)?v.price_per_m:v.price)==null?'Цена уточняется':money(isRateUnit(v)?v.price_per_m:v.price)+'/'+(isRateUnit(v)?'м':unitLabel(v.unit)))+(v.length_unknown?' · длина и итог уточняются':v.unit==='rod'?' · '+esc(money(v.price))+'/пруток':'')+'</div>').join('')+'</details>':'')+'</td><td>'+esc(p.applied?'Сохранено':p.errors.length?p.errors.join('; '):p.kind==='new'?'Новый товар':'Обновление')+'</td><td>'+esc((p.target?money(p.target.price)+' → ':'')+(p.payload?.price===undefined?'без изменений':money(p.payload.price)))+'</td><td>'+esc((p.target?money(p.target.cost)+' → ':'')+(p.payload?.cost===undefined?'без изменений':money(p.payload.cost)))+'</td></tr>').join('');
     $('excelPreviewRows').querySelectorAll('input').forEach(c=>c.onchange=()=>{plan[Number(c.dataset.importIndex)].selected=c.checked;updateApplyButton();});updateApplyButton();
   }
-  function updateApplyButton(){const n=plan.filter(p=>p.selected&&!p.applied&&p.kind!=='error').length;$('applyExcelPreview').disabled=busy||!n;$('applyExcelPreview').textContent=busy?'Импортируем…':'Применить выбранное ('+n+')';}
+  function updateApplyButton(){const n=plan.filter(p=>p.selected&&!p.applied&&p.kind!=='error').length;$('applyExcelPreview').disabled=busy||supplierDirty||!n;$('applyExcelPreview').textContent=busy?'Импортируем…':'Применить выбранное ('+n+')';}
   $('importSelectUpdates').onchange=()=>{plan.filter(p=>p.kind==='update'&&!p.applied).forEach(p=>p.selected=$('importSelectUpdates').checked);renderPreview();};
   preview.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
   el.excelImport.onchange=async()=>{
@@ -93,13 +97,13 @@ export function setupAdminTools(ctx) {
       if(file.size>20*1024*1024)throw new Error('Файл должен быть не больше 20 МБ');
       await ensureExcel();const bytes=await file.arrayBuffer();let input=bytes,options={cellDates:false};
       if(/\.csv$/i.test(file.name)){let text=new TextDecoder('utf-8').decode(bytes);if(text.includes('\uFFFD'))text=new TextDecoder('windows-1251').decode(bytes);input=text;options={...options,type:'string'};}
-      const wb=window.XLSX.read(input,options);const rows=window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      const wb=window.XLSX.read(input,options);const matrix=window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});supplierMatrix=recognizeMetalPrice(matrix)?matrix:null;const rows=window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
       if(!rows.length)throw new Error('В первом листе нет строк с товарами');if(rows.length>2000)throw new Error('Загружайте не больше 2000 строк за раз');
-      plan=buildImportPlan(rows,state.products,localDay());$('importSelectUpdates').checked=false;$('importPublishNew').checked=false;$('excelImportStatus').textContent='';renderPreview();preview.showModal();
+      supplierDirty=false;$('supplierPriceOptions').hidden=!supplierMatrix;$('supplierMarkup').value='';if(supplierMatrix)supplierPlan();else plan=buildImportPlan(rows,state.products,localDay());$('importSelectUpdates').checked=false;$('importPublishNew').checked=false;if(!supplierMatrix)$('excelImportStatus').textContent='';renderPreview();preview.showModal();
     }catch(e){toast(e.message||'Не удалось прочитать файл',true);}
   };
   $('applyExcelPreview').onclick=async()=>{
-    if(busy||!canEditProducts())return;busy=true;preview.querySelector('[data-dismiss]').disabled=true;$('importSelectUpdates').disabled=true;$('importPublishNew').disabled=true;renderPreview();let applied=0;
+    if(busy||supplierDirty||!canEditProducts())return;busy=true;preview.querySelector('[data-dismiss]').disabled=true;$('importSelectUpdates').disabled=true;$('importPublishNew').disabled=true;renderPreview();let applied=0;
     try{
       for(const item of plan.filter(p=>p.selected&&!p.applied&&p.kind!=='error')){
         if(!canEditProducts())throw new Error('Недостаточно прав для импорта');
