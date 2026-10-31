@@ -1,6 +1,6 @@
-import {replaceVariantUnits} from './variant-unit-tools.js?v=304';
-import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=304';
-import {parseVariants,validateVariant,roundMoney,parseVariantLength,unknownRodLength,isRateUnit} from './variant-model.js?v=304';
+import {replaceVariantUnits} from './variant-unit-tools.js?v=305';
+import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=305';
+import {parseVariants,validateVariant,roundMoney,parseVariantLength,unknownRodLength,isRateUnit} from './variant-model.js?v=305';
 const cleanAmount=value=>value===''||value==null?value:Number.isFinite(Number(value))&&Math.abs(Number(value)-roundMoney(value))<1e-8?roundMoney(value):value;
 export function setupVariantEditor({el,state,esc,money}){
   const area=el.fVariants,box=document.createElement('section');box.className='wide variant-admin';area.parentElement.replaceWith(box);area.hidden=true;

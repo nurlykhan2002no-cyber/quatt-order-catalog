@@ -1,6 +1,7 @@
-import {localizedProductName} from './product-language.js?v=304';
-import {variantDetails,fractionalUnit} from './variant-attributes.js?v=304';
-import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=304';
+import {localizedProductName} from './product-language.js?v=305';
+import {privatePricingText} from './private-pricing.js?v=305';
+import {variantDetails,fractionalUnit} from './variant-attributes.js?v=305';
+import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=305';
 export function bindVariantPicker({p,root,money,esc,kk,addCustomer,addSeller,whatsapp,message}){
   const variants=variantsOf(p).flatMap(v=>v.unit==='rod'&&v.length_options?.length?v.length_options.map(n=>({...v,id:v.id+'@length:'+n,length_m:n,name:v.name+' · '+n+' м'})): [v]);if(!variants.length)return;
   const host=root.querySelector('#variantPicker');if(!host)return;let selected=null;
@@ -27,6 +28,11 @@ export function bindVariantPicker({p,root,money,esc,kk,addCustomer,addSeller,wha
       calculation+='<p>'+(unknown?(kk?'Ұзындығы әртүрлі болуы мүмкін. Ұзындығы мен жалпы сомасын WhatsApp арқылы нақтылаңыз.':'Длина уточняется. Уточните длину и итоговую стоимость в WhatsApp.'):valid?(kk?'Барлығы: ':'Всего: ')+qty+' '+(selected.unit==='rod'?rodWord(qty):quantityUnitLabel(selected.unit,qty,kk))+(m!==null&&selected.unit!=='meter'?' · '+m+' м':'')+' · <strong>'+esc(money(roundMoney(price*qty)))+'</strong>':kk?'Бүтін санды көрсетіңіз немесе басқа нұсқаны таңдаңыз':'Укажите целое количество или выберите доступный вариант')+'</p>';
     }
     $('pickCalculation').innerHTML=calculation;
+    const privateSummary=root.querySelector('#selectedVariantMarkup');
+    if(privateSummary&&selected){
+      const sourceId=selected.id.replace(/@length:[\d.]+$/,'');
+      privateSummary.textContent='Выбранный размер: '+selected.name+' · '+privatePricingText(isRateUnit(selected)?selected.price_per_m:selected.price,p.variant_costs?.[sourceId]?.cost,money)+' · за '+(isRateUnit(selected)?'метр':unitLabel(selected.unit));
+    }
     for(const id of ['detailCustomerAdd','addToCartFromDetail']){const button=root.querySelector('#'+id);if(button)button.disabled=!valid;}
     if(wa){wa.disabled=!(selected&&(unknown||qtyValid));wa.textContent=unknown?(kk?'Ұзындығын WhatsApp арқылы нақтылау':'Уточнить длину в WhatsApp'):defaultWaText;}
   }
