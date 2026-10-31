@@ -1,5 +1,5 @@
-import {variantDetails,fractionalUnit} from './variant-attributes.js?v=294';
-import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=294';
+import {variantDetails,fractionalUnit} from './variant-attributes.js?v=295';
+import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=295';
 export function bindVariantPicker({p,root,money,esc,kk,addCustomer,addSeller,whatsapp,message}){
   const variants=variantsOf(p);if(!variants.length)return;
   const host=root.querySelector('#variantPicker');if(!host)return;let selected=null;
