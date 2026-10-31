@@ -1,4 +1,4 @@
-import {fractionalUnit,saleUnits,variantDetails} from './variant-attributes.js?v=306';
+import {fractionalUnit,saleUnits,variantDetails} from './variant-attributes.js?v=307';
 export const roundMoney=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
 export const variantKey=v=>v.id||[v.unit||'piece',v.diameter||'',v.length_m||'',v.name||''].join(':');
 export const cartKey=row=>row.variant_id?row.product_id+'::'+row.variant_id:row.product_id;
@@ -19,6 +19,7 @@ export function parseVariantLength(value){
 }
 export function piecePrice(v){return unknownRodLength(v)?null:v.unit==='rod'?roundMoney(Number(v.price_per_m)*Number(v.length_m)):v.unit==='meter'?Number(v.price_per_m):v.price==null||v.price===''?null:Number(v.price);}
 export function validateVariant(v){
+  if(v.specs!=null&&String(v.specs).length>6000)throw new Error('Характеристики модели: максимум 6000 символов');
   if(!String(v.name||'').trim())throw new Error('Укажите название варианта');
   if(!Object.hasOwn(saleUnits,v.unit||'piece'))throw new Error('Неизвестная единица продажи');
   if(v.length_options!=null){if(v.unit!=='rod'||!Array.isArray(v.length_options)||v.length_options.length<2||v.length_options.length>12||v.length_options.some(n=>typeof n!=='number'||!Number.isFinite(n)||n<=0)||new Set(v.length_options).size!==v.length_options.length||!v.length_options.includes(Number(v.length_m))||v.length_unknown)throw new Error('Проверьте список длин прутка: например 6/12');}
@@ -32,6 +33,7 @@ export function validateVariant(v){
   if(v.unit==='rod'&&!String(v.diameter||'').trim())throw new Error('Укажите диаметр прутка');
   if(!unknownPrice&&!unknownRodLength(v)&&!Number.isFinite(piecePrice(v)))throw new Error('Некорректная цена прутка');
   if(!['order','in_stock','out_of_stock'].includes(v.availability||'order'))throw new Error('Некорректное наличие варианта');
+  if(v.stock_qty!=null&&v.stock_qty!==''&&(!Number.isFinite(Number(v.stock_qty))||Number(v.stock_qty)<0||!validVariantQty(v,Number(v.stock_qty))&&Number(v.stock_qty)!==0))throw new Error('Проверьте остаток размера: укажите неотрицательное количество в единице продажи');
   return {...v,...(unknownRodLength(v)?{length_m:null}:{}),id:variantKey(v),price:unknownPrice?null:v.unit==='coil'&&unknownRodLength(v)?Number(v.price):piecePrice(v)};
 }
 export function variantSummary(p,kk=false){

@@ -1,7 +1,7 @@
-const CACHE="quatt-catalog-v3.0.6.0";
+const CACHE="quatt-catalog-v3.0.7.0";
 const OFFLINE_URL="./offline.html";
-const ASSETS=["./private-pricing.js?v=306",
-  "./","./index.html","./styles.css?v=306","./app.js?v=306","./dialog-dismiss.js?v=306","./config.js","./variant-model.js?v=306","./product-language.js?v=306","./product-editor-controls.js?v=306","./variant-attributes.js?v=306","./variant-picker.js?v=306","./fonts.css?v=306","./quatt-sans-cyrillic-ext.woff2","./quatt-sans-cyrillic.woff2","./quatt-sans-latin.woff2","./theme.js?v=306",
+const ASSETS=["./private-pricing.js?v=307",
+  "./","./index.html","./styles.css?v=307","./app.js?v=307","./dialog-dismiss.js?v=307","./config.js","./variant-model.js?v=307","./product-language.js?v=307","./product-editor-controls.js?v=307","./variant-attributes.js?v=307","./variant-picker.js?v=307","./fonts.css?v=307","./quatt-sans-cyrillic-ext.woff2","./quatt-sans-cyrillic.woff2","./quatt-sans-latin.woff2","./theme.js?v=307",
   "./manifest.webmanifest","./quatt-favicon-64.png","./quatt-app-192.png","./quatt-app-512.png",
   "./quatt-apple-180.png","./favicon.svg","./quatt.gif","./robots.txt","./sitemap.xml",OFFLINE_URL
 ];

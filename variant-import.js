@@ -1,5 +1,5 @@
-import {attributeFields,attributeSignature,normalizeSize,saleUnits} from './variant-attributes.js?v=306';
-import {variantKey,validateVariant,variantSummary,parseVariantLength,isRateUnit} from './variant-model.js?v=306';
+import {attributeFields,attributeSignature,normalizeSize,saleUnits} from './variant-attributes.js?v=307';
+import {variantKey,validateVariant,variantSummary,parseVariantLength,isRateUnit} from './variant-model.js?v=307';
 export function groupVariantImports(rows,products,today,flat,identity,amount,{replaceVariants=false}={}){
   const get=(r,...keys)=>{for(const k of keys){const found=Object.entries(r).find(([h,v])=>identity(h).replace(/_/g,' ')===identity(k)&&v!==null&&v!==undefined&&String(v).trim()!=='');if(found)return found[1];}return null;};
   const rejected=rows.filter(r=>get(r,'Ошибка импорта')).map(r=>({line:(Number.isInteger(Number(get(r,'Исходная строка')))?Number(get(r,'Исходная строка')):'—'),source:r,name:String(get(r,'Группа вариантов')||'Строка импорта'),sku:'',kind:'error',selected:false,applied:false,errors:[String(get(r,'Ошибка импорта'))]}));
@@ -28,7 +28,8 @@ export function groupVariantImports(rows,products,today,flat,identity,amount,{re
         if(unit==='coil'&&get(r,'Цена за метр')!==null&&get(r,'Цена','Цена за бухту')===null)throw new Error('Строка '+line+': для бухты укажите цену целой бухты в колонке «Цена»');const price=amount(unit==='coil'?get(r,'Цена','Цена за бухту','Розничная цена'):get(r,'Цена','Цена за метр','Продажа за метр','Продажа за метр, ₸','Розничная цена')),cost=amount(unit==='coil'?get(r,'Закуп','Закуп за бухту'):get(r,'Закуп','Закуп за метр','Закуп за метр, ₸'));
         const avail=identity(get(r,'Наличие')||old?.availability||'order'),available={'в наличии':'in_stock','под заказ':'order','нет в наличии':'out_of_stock',in_stock:'in_stock',order:'order',out_of_stock:'out_of_stock'}[avail];if(!available)throw new Error('Строка '+line+': неверное наличие');
         if(old&&Object.keys(attrs).length&&attributeSignature(old)!==signature&&get(r,'Артикул варианта')===null)throw new Error('Неоднозначное совпадение характеристик');
-        const v=validateVariant({...old,...attrs,id:key,name_manual:explicitName!==null?true:old?.name_manual||false,name:String(explicitName||(['rod','coil'].includes(unit)?(diameter?diameter+' мм · ':'Бухта · ')+(unknown?'Длина уточняется':lengthKey+' м'):diameter+' мм')),unit,diameter,length_options:lengthInfo.length_options,length_unknown:unknown,length_m:['rod','coil'].includes(unit)?length:length??old?.length_m??null,price_per_m:['rod','meter'].includes(unit)?price??old?.price_per_m:null,price:!['rod','meter'].includes(unit)?price??old?.price:null,availability:available});
+        const modelSpecs=get(r,'Характеристики варианта','Характеристики модели');const variantStock=amount(get(r,'Остаток размера'));
+        const v=validateVariant({...old,...attrs,...(modelSpecs!==null?{specs:String(modelSpecs)}:{}),...(variantStock!==null?{stock_qty:variantStock}:{}),id:key,name_manual:explicitName!==null?true:old?.name_manual||false,name:String(explicitName||(['rod','coil'].includes(unit)?(diameter?diameter+' мм · ':'Бухта · ')+(unknown?'Длина уточняется':lengthKey+' м'):diameter+' мм')),unit,diameter,length_options:lengthInfo.length_options,length_unknown:unknown,length_m:['rod','coil'].includes(unit)?length:length??old?.length_m??null,price_per_m:['rod','meter'].includes(unit)?price??old?.price_per_m:null,price:!['rod','meter'].includes(unit)?price??old?.price:null,availability:available});
         if(cost===null&&!costs[key])throw new Error('Строка '+line+': укажите закуп для нового размера');if(cost!==null)costs[key]={cost};
         const index=variants.findIndex(x=>x.id===key);if(index<0)variants.push(v);else variants[index]=v;
       }
@@ -37,7 +38,7 @@ export function groupVariantImports(rows,products,today,flat,identity,amount,{re
       const synthetic={...metadata,Артикул:first.article,Название:String(first.group),Бренд:first.brand,Цена:summary.price,Закуп:Number.isFinite(summaryCost)?summaryCost:target?.cost||0};
       const base=flat([synthetic],products,today)[0];if(base.errors.length)throw new Error(base.errors.join('; '));
       Object.assign(item,base,{line:records.map(x=>x.line).join(', '),source:first.row,variantInfo:(replaceVariants&&target?'Полная замена: было '+(target.variants?.length||0)+' → станет '+variants.length+'. ':'')+records.length+' размеров из файла · всего в карточке: '+variants.length});
-      Object.assign(item.payload,{variants,variant_costs:costs,availability:variants.some(v=>v.availability==='in_stock')?'in_stock':variants.some(v=>v.availability!=='out_of_stock')?'order':'out_of_stock',price_mode:'from',stock_qty:null,old_price:null,sale_end:null});item.target=target||base.target;
+      Object.assign(item.payload,{variants,variant_costs:costs,availability:variants.some(v=>v.availability==='in_stock')?'in_stock':variants.some(v=>v.availability!=='out_of_stock')?'order':'out_of_stock',price_mode:target?.price_mode||'from',stock_qty:base.payload.stock_qty??target?.stock_qty??null,old_price:null,sale_end:null});item.target=target||base.target;
     }catch(e){item.kind='error';item.errors=[e.message];item.selected=false;}
     result.push(item);
   }
