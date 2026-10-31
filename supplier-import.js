@@ -1,5 +1,5 @@
 // Supplier layout adapter. No supplier prices or customer data are embedded here.
-import {normalizeSize} from './variant-attributes.js?v=295';
+import {normalizeSize} from './variant-attributes.js?v=296';
 const num=x=>{const s=String(x??'').replace(/\s/g,'').replace(',','.');return /^\d+(?:\.\d+)?$/.test(s)?Number(s):null;};
 const amount=n=>Math.round(n*1e6)/1e6;
 export function recognizeMetalPrice(matrix){return matrix.some(r=>/Диаметр.*diameter/i.test(String(r[1])))&&matrix.some(r=>/Цена за тонну/i.test(String(r[7])));}
@@ -23,6 +23,7 @@ export function convertMetalPrice(matrix,markup){
       lengths=format.split('/').map(x=>x.trim());
       if(/^н\s*\/\s*м$/i.test(format))lengths=['н/м'];
       else if(lengths.some(x=>num(x)==null||num(x)<=0))error='Не удалось распознать длину «'+format+'»';
+      else lengths=[format];
     }
     if(!hasMarkup&&!error)error='Введите наценку для расчёта розничных цен';
     for(const length of lengths){

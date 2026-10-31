@@ -1,4 +1,4 @@
-import {fractionalUnit,saleUnits,variantDetails} from './variant-attributes.js?v=295';
+import {fractionalUnit,saleUnits,variantDetails} from './variant-attributes.js?v=296';
 export const roundMoney=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
 export const variantKey=v=>v.id||[v.unit||'piece',v.diameter||'',v.length_m||'',v.name||''].join(':');
 export const cartKey=row=>row.variant_id?row.product_id+'::'+row.variant_id:row.product_id;
@@ -10,16 +10,18 @@ export const quantityUnitLabel=(unit,n,kk=false)=>unit==='coil'&&!kk?(n%100>=11&
 export const validVariantQty=(v,n)=>Number.isFinite(n)&&n>0&&n<=100000&&(fractionalUnit(v?.unit)?Math.abs(n*1000-Math.round(n*1000))<1e-7:Number.isInteger(n));
 export function parseVariantLength(value){
   const text=String(value??'').trim(),key=text.toLocaleLowerCase('ru').replace(/[\s.\/_-]/g,'');
-  if(['нм','нд','немер','немерная','немернаядлина','длинауточняется','уточняется'].includes(key))return {length_m:null,length_unknown:true};
-  if(!text)return {length_m:null,length_unknown:false};
+  if(['нм','нд','немер','немерная','немернаядлина','длинауточняется','уточняется'].includes(key))return {length_m:null,length_unknown:true,length_options:null};
+  if(!text)return {length_m:null,length_unknown:false,length_options:null};
+  if(text.includes('/')){const parts=text.split('/').map(x=>x.trim());if(parts.length>12||parts.some(x=>!/^\d+(?:[.,]\d+)?$/.test(x)||Number(x.replace(',','.'))<=0))throw new Error('Длина: укажите, например, 6/12 или 6,0/10,0');const lengths=[...new Set(parts.map(x=>Number(x.replace(',','.'))))];return {length_m:lengths[0],length_unknown:false,length_options:lengths.length>1?lengths:null};}
   const n=Number(text.replace(',','.'));
   if(!/^\d+(?:[.,]\d+)?$/.test(text)||!Number.isFinite(n)||n<=0)throw new Error('Длина: укажите число в метрах или «н/м» / «Длина уточняется»');
-  return {length_m:n,length_unknown:false};
+  return {length_m:n,length_unknown:false,length_options:null};
 }
 export function piecePrice(v){return unknownRodLength(v)?null:v.unit==='rod'?roundMoney(Number(v.price_per_m)*Number(v.length_m)):v.unit==='meter'?Number(v.price_per_m):v.price==null||v.price===''?null:Number(v.price);}
 export function validateVariant(v){
   if(!String(v.name||'').trim())throw new Error('Укажите название варианта');
   if(!Object.hasOwn(saleUnits,v.unit||'piece'))throw new Error('Неизвестная единица продажи');
+  if(v.length_options!=null){if(v.unit!=='rod'||!Array.isArray(v.length_options)||v.length_options.length<2||v.length_options.length>12||v.length_options.some(n=>typeof n!=='number'||!Number.isFinite(n)||n<=0)||new Set(v.length_options).size!==v.length_options.length||!v.length_options.includes(Number(v.length_m))||v.length_unknown)throw new Error('Проверьте список длин прутка: например 6/12');}
   const n=isRateUnit(v)?v.price_per_m:v.price;
   const unknownPrice=!isRateUnit(v)&&(n===null||n===undefined||n==='');
   if(!unknownPrice&&(n===null||n===undefined||n===''||!Number.isFinite(Number(n))||Number(n)<0))throw new Error('Укажите неотрицательную цену варианта');

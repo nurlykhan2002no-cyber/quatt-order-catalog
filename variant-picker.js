@@ -1,7 +1,7 @@
-import {variantDetails,fractionalUnit} from './variant-attributes.js?v=295';
-import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=295';
+import {variantDetails,fractionalUnit} from './variant-attributes.js?v=296';
+import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=296';
 export function bindVariantPicker({p,root,money,esc,kk,addCustomer,addSeller,whatsapp,message}){
-  const variants=variantsOf(p);if(!variants.length)return;
+  const variants=variantsOf(p).flatMap(v=>v.unit==='rod'&&v.length_options?.length?v.length_options.map(n=>({...v,id:v.id+'@length:'+n,length_m:n,name:v.name+' · '+n+' м'})): [v]);if(!variants.length)return;
   const host=root.querySelector('#variantPicker');if(!host)return;let selected=null;
   const rods=variants.every(v=>v.unit==='rod'),diameters=[...new Set(variants.map(v=>String(v.diameter||'')))];
   const hasThickness=rods&&variants.some(v=>v.thickness_mm);

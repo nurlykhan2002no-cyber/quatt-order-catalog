@@ -4,6 +4,15 @@ import {buildImportPlan} from '../admin-data.js';
 import {variantCartRow,roundMoney,validVariantQty} from '../variant-model.js';
 import {convertMetalPrice} from '../supplier-import.js';
 
+test('one Excel row retains alternative rod lengths and prices each chosen length',()=>{
+  const row={'Группа вариантов':'Труба','Единица продажи':'Пруток','Размер / Ду, мм':32,'Длина, м':'6,0/10,0',Цена:200,Закуп:150,'Толщина, мм':2.5};
+  const first=buildImportPlan([row],[],'2026-10-31')[0];assert.equal(first.kind,'new');assert.equal(first.payload.variants.length,1);
+  const v=first.payload.variants[0];assert.deepEqual(v.length_options,[6,10]);
+  assert.equal(variantCartRow({id:'p',name:'Труба'},{...v,length_m:10},2).price,2000);
+  const product={id:'p',...first.payload};const again=buildImportPlan([{...row,Цена:250}],[product],'2026-10-31')[0];assert.equal(again.kind,'update');assert.equal(again.payload.variants.length,1);assert.equal(again.payload.variants[0].id,v.id);
+  const bad=buildImportPlan([{...row,'Длина, м':'6/нет'}],[],'2026-10-31')[0];assert.equal(bad.kind,'error');
+});
+
 test('wall and steel grade distinguish otherwise identical variants; partial updates retain private costs',()=>{
   const row=(wall,grade)=>({'Группа вариантов':'Труба','Единица продажи':'Пруток','Размер / Ду, мм':'20×40','Длина, м':6,'Толщина, мм':wall,'Марка стали':grade,Цена:200.123,Закуп:100.123});
   const plan=buildImportPlan([row(2,'Ст3'),row(2.5,'Ст3'),row(2,'Ст2')],[],'2026-10-31')[0];
