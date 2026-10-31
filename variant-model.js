@@ -1,4 +1,4 @@
-import {fractionalUnit,saleUnits,variantDetails} from './variant-attributes.js?v=297';
+import {fractionalUnit,saleUnits,variantDetails} from './variant-attributes.js?v=298';
 export const roundMoney=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
 export const variantKey=v=>v.id||[v.unit||'piece',v.diameter||'',v.length_m||'',v.name||''].join(':');
 export const cartKey=row=>row.variant_id?row.product_id+'::'+row.variant_id:row.product_id;
