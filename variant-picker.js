@@ -1,12 +1,12 @@
-import {variantDetails,fractionalUnit} from './variant-attributes.js?v=293';
-import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=293';
+import {variantDetails,fractionalUnit} from './variant-attributes.js?v=294';
+import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=294';
 export function bindVariantPicker({p,root,money,esc,kk,addCustomer,addSeller,whatsapp,message}){
   const variants=variantsOf(p);if(!variants.length)return;
   const host=root.querySelector('#variantPicker');if(!host)return;let selected=null;
   const rods=variants.every(v=>v.unit==='rod'),diameters=[...new Set(variants.map(v=>String(v.diameter||'')))];
   const hasThickness=rods&&variants.some(v=>v.thickness_mm);
   const lengthLabel=kk?'Ұзындығы нақтыланады':'Длина уточняется';
-  host.innerHTML='<h3>'+(kk?'Өлшемді таңдаңыз':'Выберите размер')+'</h3><div class="variant-pick-fields">'+(rods?'<label>Размер / Ду, мм<select id="pickDiameter">'+diameters.map(d=>'<option value="'+esc(d)+'">'+esc(d)+' мм</option>').join('')+'</select></label>':'')+(hasThickness?'<label>'+(kk?'Қабырға қалыңдығы, мм':'Толщина стенки, мм')+'<select id="pickThickness"></select></label>':'')+'<label>'+(rods?kk?'Шыбық ұзындығы':'Длина изделия':kk?'Нұсқа':'Вариант')+'<select id="pickVariant"></select></label><label>'+(rods?(kk?'Шыбық саны':'Количество целых изделий'):(kk?'Саны':'Количество'))+'<input id="pickQty" type="number" min="1" max="100000" step="1" value="1" inputmode="numeric"></label></div><div id="pickCalculation" aria-live="polite"></div>';
+  host.innerHTML='<h3>'+(kk?'Өлшемді таңдаңыз':'Выберите размер')+'</h3><div class="variant-pick-fields">'+(rods?'<label>Размер / диаметр, мм<select id="pickDiameter">'+diameters.map(d=>'<option value="'+esc(d)+'">'+esc(d)+' мм</option>').join('')+'</select></label>':'')+(hasThickness?'<label>'+(kk?'Қабырға қалыңдығы, мм':'Толщина стенки, мм')+'<select id="pickThickness"></select></label>':'')+'<label>'+(rods?kk?'Шыбық ұзындығы':'Длина изделия':kk?'Нұсқа':'Вариант')+'<select id="pickVariant"></select></label><label>'+(rods?(kk?'Шыбық саны':'Количество целых изделий'):(kk?'Саны':'Количество'))+'<input id="pickQty" type="number" min="1" max="100000" step="1" value="1" inputmode="numeric"></label></div><div id="pickCalculation" aria-live="polite"></div>';
   const $=id=>host.querySelector('#'+id),quantity=()=>Number($('pickQty').value);
   const rodWord=n=>kk?'шыбық':n%100>=11&&n%100<=14?'прутков':n%10===1?'пруток':n%10>=2&&n%10<=4?'прутка':'прутков';
   const wa=root.querySelector('#detailWhatsapp'),defaultWaText=wa?.textContent||'WhatsApp';
