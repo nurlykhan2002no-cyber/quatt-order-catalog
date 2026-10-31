@@ -1,5 +1,5 @@
-import {isRateUnit,validateVariant} from './variant-model.js?v=302';
-import {attributeSignature,normalizeSize,saleUnits} from './variant-attributes.js?v=302';
+import {isRateUnit,validateVariant} from './variant-model.js?v=303';
+import {attributeSignature,normalizeSize,saleUnits} from './variant-attributes.js?v=303';
 // Correct a mislabeled price basis; deliberately retain numeric price and cost.
 export function replaceVariantUnits(rows,from,to){
   if(!Object.hasOwn(saleUnits,to))throw new Error('Выберите единицу продажи');
