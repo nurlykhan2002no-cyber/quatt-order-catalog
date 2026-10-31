@@ -1,5 +1,5 @@
 // Supplier layout adapter. No supplier prices or customer data are embedded here.
-import {normalizeSize} from './variant-attributes.js?v=301';
+import {normalizeSize} from './variant-attributes.js?v=302';
 const num=x=>{const s=String(x??'').replace(/\s/g,'').replace(',','.');return /^\d+(?:\.\d+)?$/.test(s)?Number(s):null;};
 const amount=n=>Math.round(n*1e6)/1e6;
 export function recognizeMetalPrice(matrix){return matrix.some(r=>/Диаметр.*diameter/i.test(String(r[1])))&&matrix.some(r=>/Цена за тонну/i.test(String(r[7])));}

@@ -1,5 +1,5 @@
-import {setupVariantEditor} from "./variant-editor.js?v=301";
-import {setupAdminTools} from "./admin-tools.js?v=301";
+import {setupVariantEditor} from "./variant-editor.js?v=302";
+import {setupAdminTools} from "./admin-tools.js?v=302";
 // Product drafts stay in this browser, isolated by the signed-in account.
 const FIELD_IDS = ['fName','fNameKk','fArticle','fCategory','fBrand','fPrice','fPriceMode','fAvailability','fStockQty','fBadge','fDelivery','fOldPrice','fSaleEnd','fSpecs','fVariants','fVariantCosts','fVideoUrl','fCost','fSupplier','fSupplierAddress','fSupplierContact','fCheckedDate','fNotes','fActive','fRelated','fBundle'];
 export function templateFields(name) {
@@ -25,9 +25,13 @@ export function setupProductTools(ctx) {
   const status = $('productDraftStatus');
   let key='', baseline='', queuedSignature='', stopped=false, timer, generation=0, queue=Promise.resolve(), lastDraft=null;
   const dbPromise = new Promise((resolve,reject)=>{
+    let expired=false;
+    const timeout=setTimeout(()=>{expired=true;reject(new Error('Хранилище не отвечает'));},4000);
     const req=indexedDB.open('quatt-product-drafts',1);
     req.onupgradeneeded=()=>req.result.createObjectStore('drafts');
-    req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+    req.onsuccess=()=>{clearTimeout(timeout);if(expired)req.result.close();else resolve(req.result);};
+    req.onerror=()=>{clearTimeout(timeout);reject(req.error);};
+    req.onblocked=()=>{expired=true;clearTimeout(timeout);reject(new Error('Хранилище занято другой вкладкой'));};
   });
   // A browser may disallow local storage; keep the editor usable and report it.
   dbPromise.catch(()=>{});
@@ -35,7 +39,9 @@ export function setupProductTools(ctx) {
     const db=await dbPromise;
     return new Promise((resolve,reject)=>{
       const tx=db.transaction('drafts',mode), req=action(tx.objectStore('drafts'));
-      tx.oncomplete=()=>resolve(req.result); tx.onerror=()=>reject(tx.error); tx.onabort=()=>reject(tx.error||new Error('Хранилище недоступно'));
+      const timeout=setTimeout(()=>{reject(new Error('Хранилище не отвечает'));try{tx.abort();}catch{}},4000);
+      tx.oncomplete=()=>{clearTimeout(timeout);resolve(req.result);};
+      tx.onerror=tx.onabort=()=>{clearTimeout(timeout);reject(tx.error||new Error('Хранилище недоступно'));};
     });
   }
   function fields() {
@@ -47,17 +53,16 @@ export function setupProductTools(ctx) {
     return {fields:fields(), images:state.formImages.map(i=>i.file?{file:i.file}:{id:i.id,image_path:i.image_path,product_id:i.product_id,sort_order:i.sort_order}), updated:Date.now()};
   }
   function signature(s) { return JSON.stringify([s.fields,s.images.map(i=>[i.id,i.image_path,i.file?.name,i.file?.size,i.file?.lastModified])]); }
-  function report(message) { status.textContent=message; }
+  function report(message) { if(status.textContent!==message)status.textContent=message; }
   function changed() {
     if(stopped||!key||!el.productDialog.open||!canEditProducts())return;
-    if(signature(snapshot())===queuedSignature)return;
-    report('Сохраняем черновик…'); clearTimeout(timer); timer=setTimeout(flush,250);
+    report('Сохраняем черновик…'); clearTimeout(timer); timer=setTimeout(flush,500);
   }
   function flush() {
     clearTimeout(timer);
     if(stopped||!key||!canEditProducts())return queue;
     const data=snapshot(), sig=signature(data), target=key, token=generation;
-    if(sig===queuedSignature)return queue;
+    if(sig===queuedSignature){if(sig===baseline)report('Черновик актуален.');return queue;}
     queuedSignature=sig;
     queue=queue.catch(()=>{}).then(()=>store('readwrite',s=>s.put(data,target))).then(()=>{
       if(token===generation){baseline=sig;if(sig===queuedSignature)report('Черновик сохранён на этом устройстве · '+new Date(data.updated).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}));}
