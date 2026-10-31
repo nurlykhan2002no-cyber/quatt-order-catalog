@@ -2,7 +2,7 @@ import {fractionalUnit,saleUnits,variantDetails} from './variant-attributes.js?v
 export const roundMoney=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
 export const variantKey=v=>v.id||[v.unit||'piece',v.diameter||'',v.length_m||'',v.name||''].join(':');
 export const cartKey=row=>row.variant_id?row.product_id+'::'+row.variant_id:row.product_id;
-export function variantsOf(p){return Array.isArray(p?.variants)?p.variants.filter(v=>v&&v.name).map(v=>({...v,name:String(v.name).replace(/^Ø(?=\s*\d)/,''),id:variantKey(v)})):[];}
+export function variantsOf(p){return Array.isArray(p?.variants)?p.variants.filter(v=>v&&v.name).map(v=>({...v,name:v.name_manual?v.name:String(v.name).replace(/^Ø(?=\s*\d)/,''),id:variantKey(v)})):[];}
 export const isRateUnit=v=>['rod','meter'].includes(v?.unit);
 export const unknownRodLength=v=>['rod','coil'].includes(v?.unit)&&v.length_unknown===true;
 export const unitLabel=(unit,kk=false)=>({rod:kk?'шыбық':'прут.',piece:kk?'дана':'шт.',meter:'м',coil:kk?'орам':'бухта',sheet:kk?'табақ':'лист',card:kk?'карта':'карта',roll:kk?'орам':'рулон',kg:'кг',ton:'т',sqm:'м²'}[unit]||(kk?'дана':'шт.'));

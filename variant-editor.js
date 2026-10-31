@@ -35,6 +35,7 @@ export function setupVariantEditor({el,state,esc,money}){
     list.querySelectorAll('[data-field]').forEach(input=>input.onchange=()=>{
       const card=input.closest('.variant-editor-card'),r=rows[Number(card.dataset.index)],k=input.dataset.field,previousRate=isRateUnit(r)?r.price_per_m:r.price;
       r[k]=['price_per_m','price','cost'].includes(k)?input.value===''?'':cleanAmount(Number(input.value)):input.value;
+      if(k==='name')r.name_manual=true;
       if(k==='length_m'){try{Object.assign(r,parseVariantLength(input.value));}catch{r.length_unknown=false;}}
       if(k==='unit'){if(!['rod','coil'].includes(r.unit))r.length_unknown=false;if(r.unit!=='rod')r.length_options=null;r.price_per_m=isRateUnit(r)?previousRate:null;r.price=isRateUnit(r)?null:previousRate;}
       card.querySelector('.variant-row-error').hidden=true;card.classList.remove('has-error');sync();
@@ -48,7 +49,7 @@ export function setupVariantEditor({el,state,esc,money}){
   box.querySelector('#toggleVariantRows').onclick=()=>{const cards=[...list.querySelectorAll('.variant-editor-card')],open=!cards.every(c=>c.open);cards.forEach(c=>c.open=open);updateToggle();};
   box.querySelector('#addVariantRow').onclick=()=>{const r={id:crypto.randomUUID(),name:'',unit:rows.at(-1)?.unit||'rod',length_m:rows.at(-1)?.unit&&rows.at(-1).unit!=='rod'?'':6,price_per_m:'',price:'',cost:'',availability:'order'};rows.push(r);sync();render(r.id);list.lastElementChild.querySelector('[data-field="name"]').focus();};
   return {
-    refresh(){let parsed=[];try{parsed=area.value.trim().startsWith('[')?JSON.parse(area.value):parseVariants(area.value);}catch{}let privateCosts={};try{privateCosts=JSON.parse(costs.value||'{}');}catch{}rows=parsed.map(v=>({...v,name:String(v.name||'').replace(/^Ø(?=\s*\d)/,''),price:cleanAmount(v.price),price_per_m:cleanAmount(v.price_per_m),cost:cleanAmount(privateCosts[v.id]?.cost??'')}));el.fPrice.readOnly=rows.length>0;el.fCost.readOnly=rows.length>0;box.querySelector('#variantUnitStatus').textContent='';render(null,true);},
+    refresh(){let parsed=[];try{parsed=area.value.trim().startsWith('[')?JSON.parse(area.value):parseVariants(area.value);}catch{}let privateCosts={};try{privateCosts=JSON.parse(costs.value||'{}');}catch{}rows=parsed.map(v=>({...v,name:v.name_manual?v.name:String(v.name||'').replace(/^Ø(?=\s*\d)/,''),price:cleanAmount(v.price),price_per_m:cleanAmount(v.price_per_m),cost:cleanAmount(privateCosts[v.id]?.cost??'')}));el.fPrice.readOnly=rows.length>0;el.fCost.readOnly=rows.length>0;box.querySelector('#variantUnitStatus').textContent='';render(null,true);},
     validate(){for(let i=0;i<rows.length;i++){const r=rows[i];try{validateVariant({...r,name:rowName(r)});if(r.cost!==''&&r.cost!=null&&(!Number.isFinite(Number(r.cost))||Number(r.cost)<0))throw new Error('Проверьте закуп варианта');}catch(e){const card=list.querySelector('[data-index="'+i+'"]');card.open=true;card.classList.add('has-error');const message=card.querySelector('.variant-row-error');message.textContent=e.message;message.hidden=false;card.querySelector('[data-field]').focus();throw e;}}sync();return {variants:parseVariants(area.value),variant_costs:JSON.parse(costs.value||'{}')};}
   };
 }
