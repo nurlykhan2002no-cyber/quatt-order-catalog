@@ -1,7 +1,7 @@
-import {localizedProductName} from './product-language.js?v=311';
-import {privatePricingText} from './private-pricing.js?v=311';
-import {variantDetails,fractionalUnit} from './variant-attributes.js?v=311';
-import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=311';
+import {localizedProductName} from './product-language.js?v=312';
+import {privatePricingText} from './private-pricing.js?v=312';
+import {variantDetails,fractionalUnit} from './variant-attributes.js?v=312';
+import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=312';
 export function bindVariantPicker({p,root,money,esc,specsHtml,kk,addCustomer,addSeller,whatsapp,message}){
   const variants=variantsOf(p).flatMap(v=>v.unit==='rod'&&v.length_options?.length?v.length_options.map(n=>({...v,id:v.id+'@length:'+n,length_m:n,name:v.name+' · '+n+' м'})): [v]);if(!variants.length)return;
   const host=root.querySelector('#variantPicker');if(!host)return;let selected=null;
@@ -44,7 +44,7 @@ export function bindVariantPicker({p,root,money,esc,specsHtml,kk,addCustomer,add
     const rows=rods?variants.filter(v=>String(v.diameter||'')===$('pickDiameter').value&&(!hasThickness||String(v.thickness_mm||'')===$('pickThickness').value)):variants;
     $('pickVariant').innerHTML=rows.map(v=>'<option value="'+esc(v.id)+'">'+esc(rods?(unknownRodLength(v)?lengthLabel:v.length_m+' м'):v.name.replace(/Длина уточняется/gi,lengthLabel)+' · '+unitLabel(v.unit,kk)+(v.unit==='coil'&&!unknownRodLength(v)?' · '+v.length_m+' м':''))+(!rods&&variantDetails(v)?' · '+esc(variantDetails(v)):'')+(v.availability==='out_of_stock'?(kk?' — жоқ':' — нет в наличии'):'')+'</option>').join('');update();
   }
-  function dimensions(){if(hasThickness){const walls=[...new Set(variants.filter(v=>String(v.diameter||'')===$('pickDiameter').value).map(v=>String(v.thickness_mm||'')))];$('pickThickness').innerHTML=walls.map(t=>'<option value="'+esc(t)+'">'+esc(t|| (kk?'Көрсетілмеген':'Не указана'))+'</option>').join('');}options();}
+  function dimensions(){if(hasThickness){const walls=[...new Set(variants.filter(v=>String(v.diameter||'')===$('pickDiameter').value).map(v=>String(v.thickness_mm||'')))];$('pickThickness').closest('label').hidden=walls.every(t=>!t.trim());$('pickThickness').innerHTML=walls.map(t=>'<option value="'+esc(t)+'">'+esc(t|| (kk?'Көрсетілмеген':'Не указана'))+'</option>').join('');}options();}
   if(rods)$('pickDiameter').onchange=dimensions;if(hasThickness)$('pickThickness').onchange=options;$('pickVariant').onchange=update;$('pickQty').oninput=update;dimensions();
   root.querySelector('#detailCustomerAdd').onclick=()=>{if(!root.querySelector('#detailCustomerAdd').disabled)addCustomer(selected,quantity());};
   const seller=root.querySelector('#addToCartFromDetail');if(seller)seller.onclick=()=>{if(!seller.disabled)addSeller(selected,quantity());};

@@ -1,6 +1,6 @@
-import {recognizeMetalPrice,convertMetalPrice} from './supplier-import.js?v=311';
-import {isRateUnit,unitLabel} from './variant-model.js?v=311';
-import {identity,buildImportPlan,priceAge} from './admin-data.js?v=311';
+import {recognizeMetalPrice,convertMetalPrice} from './supplier-import.js?v=312';
+import {isRateUnit,unitLabel} from './variant-model.js?v=312';
+import {identity,buildImportPlan,priceAge} from './admin-data.js?v=312';
 
 export function setupAdminTools(ctx) {
   const {el,state,canEditProducts,openProduct,publicUrl,imgsFor,toast,supabase,ensureExcel,loadData,addCategory,logProductChange,buildProductChanges,money,esc}=ctx;
