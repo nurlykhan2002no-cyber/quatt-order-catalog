@@ -1,5 +1,5 @@
-import {setupVariantEditor} from "./variant-editor.js?v=313";
-import {setupAdminTools} from "./admin-tools.js?v=313";
+import {setupVariantEditor} from "./variant-editor.js?v=314";
+import {setupAdminTools} from "./admin-tools.js?v=314";
 // Product drafts stay in this browser, isolated by the signed-in account.
 const FIELD_IDS = ['fName','fNameKk','fArticle','fCategory','fBrand','fPrice','fPriceMode','fAvailability','fStockQty','fBadge','fDelivery','fOldPrice','fSaleEnd','fSpecs','fVariants','fVariantCosts','fVideoUrl','fCost','fSupplier','fSupplierAddress','fSupplierContact','fCheckedDate','fNotes','fActive','fRelated','fBundle'];
 export function templateFields(name) {
@@ -147,5 +147,5 @@ export function setupProductTools(ctx) {
   el.productDialog.addEventListener('close',()=>flush());
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&el.productDialog.open)flush();});
   window.addEventListener('pagehide',()=>{if(el.productDialog.open)flush();});
-  return {opened,changed,flush,saved,validateVariants:()=>variantEditor.validate(),catalogLoaded:()=>adminTools.catalogLoaded()};
+  return {opened,changed,flush,saved,applyVariantMarkup:n=>variantEditor.applyMarkup(n),validateVariants:()=>variantEditor.validate(),catalogLoaded:()=>adminTools.catalogLoaded()};
 }

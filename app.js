@@ -1,10 +1,10 @@
-import {privatePricingText} from './private-pricing.js?v=313';
-import {setupProductEditorControls} from './product-editor-controls.js?v=313';
-import {localizedProductName,localizedCartName} from './product-language.js?v=313';
-import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=313';
-import {bindDialogBackdrop} from "./dialog-dismiss.js?v=313";
-import {variantsOf,variantSummary,parseVariants,variantCartRow,cartKey as lineKey,roundMoney,unitLabel,quantityUnitLabel,isRateUnit} from "./variant-model.js?v=313";
-import {bindVariantPicker} from "./variant-picker.js?v=313";
+import {privatePricingText} from './private-pricing.js?v=314';
+import {setupProductEditorControls} from './product-editor-controls.js?v=314';
+import {localizedProductName,localizedCartName} from './product-language.js?v=314';
+import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=314';
+import {bindDialogBackdrop} from "./dialog-dismiss.js?v=314";
+import {variantsOf,variantSummary,parseVariants,variantCartRow,cartKey as lineKey,roundMoney,unitLabel,quantityUnitLabel,isRateUnit} from "./variant-model.js?v=314";
+import {bindVariantPicker} from "./variant-picker.js?v=314";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_BUCKET } from "./config.js";
 
@@ -162,7 +162,7 @@ function loadLocal(){try{state.favorites=JSON.parse(localStorage.getItem("quatt-
 async function loadRole(){if(!state.session){state.role="guest";state.email="";return}state.email=state.session.user.email||"";const {data,error}=await supabase.rpc("catalog_role");if(error){console.warn(error);state.role="seller";return}state.role=data||"seller"}
 async function ensureProductTools(){
   if(productTools)return;
-  if(!productToolsPromise)productToolsPromise=import("./product-tools.js?v=313").then(({setupProductTools})=>{
+  if(!productToolsPromise)productToolsPromise=import("./product-tools.js?v=314").then(({setupProductTools})=>{
     productTools=setupProductTools({el,state,canEditProducts,openProduct,renderFormImages,renderRelationOptions,setSelectedValues,updateMargin,renderBadgePreview,publicUrl,imgsFor,decodeImageSafely,toast,supabase,ensureExcel,loadData,addCategory,logProductChange,buildProductChanges,money,esc,render});
   }).catch(e=>{console.warn(e);productToolsPromise=null;$("productDraftStatus").textContent="Автосохранение недоступно: обновите страницу при подключении к интернету.";toast("Не удалось загрузить инструменты добавления товаров.",true)});
   return productToolsPromise;
@@ -326,7 +326,7 @@ function renderFormImages(){
 function updateMargin(){const retail=$("fRetailPriceBottom");retail.value=el.fPrice.value;retail.readOnly=el.fPrice.readOnly;const price=Number(el.fPrice.value||0),cost=Number(el.fCost.value||0),difference=price-cost;const markup=cost>0?new Intl.NumberFormat("ru-RU",{maximumFractionDigits:2}).format(difference/cost*100)+"%":"не рассчитана (укажите закуп)";el.marginInfo.textContent="Маржа: "+money(difference)+" · Наценка: "+markup}
 function renderBadgePreview(){const v=el.fBadge.value;if(!v){el.badgePreview.innerHTML="";return}el.badgePreview.innerHTML=`<span class="product-badge badge-${norm(v)}" style="position:static">${esc(v)}</span>`}
 function roundRetail(v){return Math.ceil(Number(v||0)/100)*100}
-function applyMarkup(n){el.fPrice.value=roundRetail(Number(el.fCost.value||0)*(1+Number(n)/100));updateMargin()}
+function applyMarkup(n){try{const result=productTools?.applyVariantMarkup(n);if(result){toast("Наценка "+n+"%: рассчитано вариантов — "+result.changed+(result.missing?". Без закупочной цены — "+result.missing+", укажите закуп и примените наценку ещё раз.":". Нажмите «Сохранить»."),result.missing>0);return;}el.fPrice.value=roundMoney(Number(el.fCost.value||0)*(1+Number(n)/100));updateMargin();}catch(e){toast(e.message,true)}}
 document.querySelectorAll("[data-markup]").forEach(b=>b.onclick=()=>applyMarkup(b.dataset.markup));el.fBadge.onchange=renderBadgePreview;el.applyManualMarkup.onclick=()=>{const n=Number(el.manualMarkup.value);if(!Number.isFinite(n)||n<0)return toast("Укажи корректный процент",true);applyMarkup(n)};el.fCost.oninput=updateMargin;el.fPrice.oninput=updateMargin;$("fRetailPriceBottom").oninput=()=>{el.fPrice.value=$("fRetailPriceBottom").value;updateMargin();};
 async function decodeImageElement(file,maxSide=1800){return await new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),img=new Image();img.onload=async()=>{try{const scale=Math.min(1,maxSide/Math.max(img.naturalWidth||1,img.naturalHeight||1));const c=document.createElement("canvas");c.width=Math.max(1,Math.round(img.naturalWidth*scale));c.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=c.getContext("2d",{alpha:false});ctx.drawImage(img,0,0,c.width,c.height);const blob=await new Promise(r=>c.toBlob(r,"image/webp",.88));URL.revokeObjectURL(url);if(!blob)return reject(new Error(`${file.name}: не удалось обработать фото`));resolve(new File([blob],file.name.replace(/\.[^.]+$/i,"")+".webp",{type:"image/webp"}))}catch(e){URL.revokeObjectURL(url);reject(e)}};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error(`${file.name}: формат фото не поддерживается`))};img.src=url})}
 async function decodeImageSafely(file,maxSide=1800){
@@ -565,7 +565,7 @@ async function openDashboard(refreshOnly=false){
     renderProducts();
   }catch(e){el.dashboardContent.innerHTML=`<p class="error-text">${esc(e.message||e)}</p>`}
 }
-let bulkTools=null; async function openBulk(){if(!canEditProducts())return;try{if(!bulkTools){const {setupBulkTools}=await import("./bulk-tools.js?v=313");bulkTools=setupBulkTools({el,state,canEditProducts,money,esc,catName,imgsFor,publicUrl,roundRetail,supabase,loadData,logProductChange,buildProductChanges});}bulkTools.open();}catch(e){toast(e.message||"Не удалось открыть массовое редактирование",true)}}
+let bulkTools=null; async function openBulk(){if(!canEditProducts())return;try{if(!bulkTools){const {setupBulkTools}=await import("./bulk-tools.js?v=314");bulkTools=setupBulkTools({el,state,canEditProducts,money,esc,catName,imgsFor,publicUrl,roundRetail,supabase,loadData,logProductChange,buildProductChanges});}bulkTools.open();}catch(e){toast(e.message||"Не удалось открыть массовое редактирование",true)}}
 
 function excelRows(){return state.products.flatMap(p=>variantsOf(p).length?variantsOf(p).map(v=>({"Группа вариантов":p.name,"Название на казахском":p.name_kk||"","Артикул карточки":p.article||"",Категория:catName(p.category_id),Бренд:p.brand||"","Артикул варианта":v.id,"Единица продажи":(saleUnits[v.unit]||"Штука"),Вариант:v.name,"Характеристики варианта":v.specs||"","Остаток размера":v.stock_qty??"",...Object.fromEntries(editorAttributeFields.map(([key,label])=>[label,v[key]??""])),"Размер / Ду, мм":v.diameter||"","Длина прутка, м":v.length_unknown?"Длина уточняется":v.length_options?.join("/")||v.length_m||"",Цена:isRateUnit(v)?v.price_per_m:v.price,Закуп:p.variant_costs?.[v.id]?.cost??"",Наличие:availabilityLabel(v.availability||"order"),Поставщик:p.supplier||"",Дата_проверки:p.checked_date||""})):[({Артикул:p.article||"",Название:p.name,"Название на казахском":p.name_kk||"",Категория:catName(p.category_id),Бренд:p.brand||"",Цена:Number(p.price||0),Закуп:Number(p.cost||0),Наценка:Number(p.markup||0),Наличие:availabilityLabel(p.availability||"order"),Остаток:p.stock_qty??"",Архив:p.archived?"Да":"Нет",Характеристики:p.specs||"",Поставщик:p.supplier||"",Адрес_поставщика:p.supplier_address||"",Контакт_поставщика:p.supplier_contact||"",Дата_проверки:p.checked_date||"",Фото:imgsFor(p.id).map(i=>publicUrl(i.image_path)).join("; ")})])}
 async function downloadWorkbook(rows,name,sheet="Товары"){try{await ensureExcel();}catch(e){toast(e.message,true);return;}const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),sheet);XLSX.writeFile(wb,name)}
@@ -697,7 +697,7 @@ function createLaunchSplash(){
   wrap.className='launch-splash';
   wrap.innerHTML=`
     <div class="launch-splash__inner">
-      <img class="launch-splash__logo" src="./quatt-app-192.png?v=313" alt="QUATT">
+      <img class="launch-splash__logo" src="./quatt-app-192.png?v=314" alt="QUATT">
       <div class="launch-splash__brand">QUATT QURYLYS</div>
       <div class="launch-splash__sub">${state.lang==="kk"?"Жөндеу мен құрылысқа қажеттінің бәрі":"Всё для ремонта и строительства"}</div><div class="launch-splash__loading" role="status">${state.lang==="kk"?"Каталог жүктелуде…":"Загружаем каталог…"}</div>
       <div class="launch-splash__dots" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -867,6 +867,6 @@ async function init(){
   }
   // Show the catalogue immediately when its data is ready.
   hideLaunchSplash();
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=313").catch(()=>{})
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=314").catch(()=>{})
 }
 init();
