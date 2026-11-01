@@ -1,4 +1,4 @@
-import {groupVariantImports} from "./variant-import.js?v=315";
+import {groupVariantImports} from "./variant-import.js?v=316";
 export const identity = value=>String(value??'').normalize('NFKC').trim().toLocaleLowerCase('ru').replace(/\s+/g,' ');
 export function priceAge(date, today=new Date()) {
   if(!date)return null;
