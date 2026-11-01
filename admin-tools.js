@@ -1,6 +1,6 @@
-import {recognizeMetalPrice,convertMetalPrice} from './supplier-import.js?v=309';
-import {isRateUnit,unitLabel} from './variant-model.js?v=309';
-import {identity,buildImportPlan,priceAge} from './admin-data.js?v=309';
+import {recognizeMetalPrice,convertMetalPrice} from './supplier-import.js?v=310';
+import {isRateUnit,unitLabel} from './variant-model.js?v=310';
+import {identity,buildImportPlan,priceAge} from './admin-data.js?v=310';
 
 export function setupAdminTools(ctx) {
   const {el,state,canEditProducts,openProduct,publicUrl,imgsFor,toast,supabase,ensureExcel,loadData,addCategory,logProductChange,buildProductChanges,money,esc}=ctx;
@@ -58,7 +58,7 @@ export function setupAdminTools(ctx) {
   function chooseSupplier(s){el.fSupplier.value=s.name;el.fSupplierAddress.value=s.address||'';el.fSupplierContact.value=s.contact||'';notify();}
   function renderSuppliers(){
     const rows=supplierRows().filter(s=>identity([s.name,s.address,s.contact].join(' ')).includes(identity($('supplierSearch').value)));
-    $('supplierDirectoryList').innerHTML=rows.map(s=>'<div class="supplier-directory-row"><strong>'+esc(s.name)+'</strong><span>'+esc([s.address,s.contact].filter(Boolean).join(' · '))+'</span><div><button type="button" class="small-btn" data-supplier-pick="'+esc(s.id)+'">Выбрать</button><button type="button" class="small-btn" data-supplier-edit="'+esc(s.id)+'">Редактировать</button></div></div>').join('')||'<p class="fine">Поставщики не найдены. Добавьте первого справа.</p>';
+    $('supplierDirectoryList').innerHTML=rows.map(s=>'<div class="supplier-directory-row"><strong>'+esc(s.name)+'</strong><span>'+esc([s.address,s.contact].filter(Boolean).join(' · '))+'</span><div><button type="button" class="small-btn" '+(el.productDialog.open?'':'hidden')+' data-supplier-pick="'+esc(s.id)+'">Выбрать</button><button type="button" class="small-btn" data-supplier-edit="'+esc(s.id)+'">Редактировать</button></div></div>').join('')||'<p class="fine">Поставщики не найдены. Добавьте первого справа.</p>';
     $('supplierDirectoryList').querySelectorAll('[data-supplier-pick]').forEach(b=>b.onclick=()=>{chooseSupplier(supplierRows().find(s=>s.id===b.dataset.supplierPick));directory.close();});
     $('supplierDirectoryList').querySelectorAll('[data-supplier-edit]').forEach(b=>b.onclick=()=>{const s=supplierRows().find(s=>s.id===b.dataset.supplierEdit);supplierEditId=s.legacy?'':s.id;$('supplierName').value=s.name;$('supplierAddress').value=s.address||'';$('supplierContact').value=s.contact||'';$('supplierEditTitle').textContent='Редактировать поставщика';});
   }
@@ -123,8 +123,15 @@ export function setupAdminTools(ctx) {
     }catch(e){$('excelImportStatus').textContent=e.message+'. Уже сохранено в этом запуске: '+applied+'. Остальные строки не применены.';}
     finally{busy=false;preview.querySelector('[data-dismiss]').disabled=false;$('importSelectUpdates').disabled=false;$('importPublishNew').disabled=false;renderPreview();await loadData();}
   };
+  const workspace=document.createElement('section');workspace.id='procurementWorkspace';workspace.className='procurement-workspace';workspace.hidden=true;
+  workspace.innerHTML='<div class="procurement-head"><div><h2>Работа с товарами</h2><p>Добавляйте товары, загружайте прайсы и проверяйте цены.</p></div><span id="procurementSummary"></span></div><div class="procurement-actions"><button type="button" class="primary" id="procurementImport">↑ Импорт Excel</button><button type="button" class="small-btn" id="procurementAdd">＋ Добавить товар</button><a class="small-btn" href="./quatt-variants-template.xlsx" download>Скачать шаблон Excel</a><button type="button" class="small-btn" id="procurementSuppliers">Поставщики</button><button type="button" class="small-btn" id="procurementExport">↓ Экспорт товаров</button></div><details><summary>Как загрузить товары и обновить цены</summary><ol><li>Скачайте шаблон или экспортируйте текущие товары для обновления.</li><li>Одна строка — товар или его размер / модель. Одинаковая группа объединяет варианты в одну карточку. Артикул можно оставить пустым у нового товара.</li><li>Укажите поставщика: сохранённые адрес и контакт подставятся автоматически. Для цены прутка и закупа используйте стоимость за метр.</li><li>Нажмите «Импорт Excel», проверьте предпросмотр и выберите товары. Существующие товары обновятся только после вашего выбора.</li><li>Нажмите «Применить выбранное». Новые карточки по умолчанию скрыты от клиентов; показ можно включить в предпросмотре или редакторе.</li></ol><p>Пустые ячейки при обновлении сохраняют прежние данные. Прайс Металлсервис можно загрузить напрямую и указать наценку в предпросмотре.</p></details>';
+  document.querySelector('.search-wrap').insertAdjacentElement('beforebegin',workspace);
+  $('procurementImport').onclick=()=>{if(canEditProducts())el.excelImport.click();};
+  $('procurementAdd').onclick=()=>{if(canEditProducts())openProduct();};
+  $('procurementExport').onclick=()=>{if(canEditProducts())el.exportExcelBtn.click();};
+  $('procurementSuppliers').onclick=()=>{if(!canEditProducts())return;directory.showModal();loadSuppliers();};
   const auditButton=document.createElement('button');auditButton.type='button';auditButton.id='priceAuditBtn';auditButton.className='small-btn price-audit-button';document.querySelector('.result-line').insertAdjacentElement('beforebegin',auditButton);
   auditButton.onclick=()=>{state.staleOnly=!state.staleOnly;ctx.render();};
-  function catalogLoaded(){const n=state.products.filter(p=>(state.showArchived?p.archived===true:p.archived!==true)&&(priceAge(p.checked_date)===null||priceAge(p.checked_date)>=30)).length;auditButton.hidden=!canEditProducts();auditButton.classList.toggle('active',!!state.staleOnly);auditButton.setAttribute('aria-pressed',String(!!state.staleOnly));auditButton.textContent=state.staleOnly?'Показать все товары':'Проверить цены ('+n+')';}
+  function catalogLoaded(){workspace.hidden=!canEditProducts();$('procurementSummary').textContent='В каталоге: '+state.products.filter(p=>p.archived!==true).length+' · Скрыто: '+state.products.filter(p=>p.archived!==true&&p.active===false).length;const n=state.products.filter(p=>(state.showArchived?p.archived===true:p.archived!==true)&&(priceAge(p.checked_date)===null||priceAge(p.checked_date)>=30)).length;auditButton.hidden=!canEditProducts();auditButton.classList.toggle('active',!!state.staleOnly);auditButton.setAttribute('aria-pressed',String(!!state.staleOnly));auditButton.textContent=state.staleOnly?'Показать все товары':'Проверить цены ('+n+')';}
   return {catalogLoaded,refresh(){pickers.forEach(p=>p.reset());duplicateHint();priceHint();syncSuppliers();loadSuppliers();},sync(){pickers.forEach(p=>p.render());duplicateHint();priceHint();syncSuppliers();}};
 }
