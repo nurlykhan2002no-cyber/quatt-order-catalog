@@ -1,6 +1,6 @@
-import {replaceVariantUnits} from './variant-unit-tools.js?v=312';
-import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=312';
-import {parseVariants,validateVariant,roundMoney,parseVariantLength,unknownRodLength,isRateUnit} from './variant-model.js?v=312';
+import {replaceVariantUnits} from './variant-unit-tools.js?v=313';
+import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=313';
+import {parseVariants,validateVariant,roundMoney,parseVariantLength,unknownRodLength,isRateUnit} from './variant-model.js?v=313';
 const cleanAmount=value=>value===''||value==null?value:Number.isFinite(Number(value))&&Math.abs(Number(value)-roundMoney(value))<1e-8?roundMoney(value):value;
 export function setupVariantEditor({el,state,esc,money,updateMargin=()=>{}}){
   const area=el.fVariants,box=document.createElement('section');box.className='wide variant-admin';area.parentElement.replaceWith(box);area.hidden=true;
@@ -52,7 +52,7 @@ export function setupVariantEditor({el,state,esc,money,updateMargin=()=>{}}){
   }
   list.addEventListener('invalid',e=>{const card=e.target.closest('.variant-editor-card');if(card)card.open=true;},true);
   box.querySelector('#toggleVariantRows').onclick=()=>{const cards=[...list.querySelectorAll('.variant-editor-card')],open=!cards.every(c=>c.open);cards.forEach(c=>c.open=open);updateToggle();};
-  box.querySelector('#addVariantRow').onclick=()=>{const r={id:crypto.randomUUID(),name:'',unit:rows.at(-1)?.unit||'rod',length_m:rows.at(-1)?.unit&&rows.at(-1).unit!=='rod'?'':6,price_per_m:'',price:'',cost:'',availability:'order'};rows.push(r);sync();render(r.id);list.lastElementChild.querySelector('[data-field="name"]').focus();};
+  box.querySelector('#addVariantRow').onclick=()=>{const r={id:crypto.randomUUID(),name:'',unit:rows.at(-1)?.unit||'piece',length_m:rows.at(-1)?.unit==='rod'?6:'',price_per_m:'',price:'',cost:'',availability:'order'};rows.push(r);sync();render(r.id);list.lastElementChild.querySelector('[data-field="name"]').focus();};
   return {
     refresh(){let parsed=[];try{parsed=area.value.trim().startsWith('[')?JSON.parse(area.value):parseVariants(area.value);}catch{}let privateCosts={};try{privateCosts=JSON.parse(costs.value||'{}');}catch{}rows=parsed.map(v=>({...v,name:v.name_manual?v.name:String(v.name||'').replace(/^Ø(?=\s*\d)/,''),price:cleanAmount(v.price),price_per_m:cleanAmount(v.price_per_m),cost:cleanAmount(privateCosts[v.id]?.cost??'')}));el.fAvailability.disabled=false;el.fPriceMode.disabled=false;el.fStockQty.readOnly=false;el.fPrice.readOnly=rows.length>0;el.fCost.readOnly=rows.length>0;box.querySelector('#variantUnitStatus').textContent='';render(null,true);updateMargin();},
     validate(){for(let i=0;i<rows.length;i++){const r=rows[i];try{validateVariant({...r,name:rowName(r)});if(r.cost!==''&&r.cost!=null&&(!Number.isFinite(Number(r.cost))||Number(r.cost)<0))throw new Error('Проверьте закуп варианта');}catch(e){const card=list.querySelector('[data-index="'+i+'"]');card.open=true;card.classList.add('has-error');const message=card.querySelector('.variant-row-error');message.textContent=e.message;message.hidden=false;card.querySelector('[data-field]').focus();throw e;}}sync();return {variants:parseVariants(area.value),variant_costs:JSON.parse(costs.value||'{}')};}

@@ -1,5 +1,5 @@
-import {attributeFields,attributeSignature,normalizeSize,saleUnits} from './variant-attributes.js?v=312';
-import {variantKey,validateVariant,variantSummary,parseVariantLength,isRateUnit} from './variant-model.js?v=312';
+import {attributeFields,attributeSignature,normalizeSize,saleUnits} from './variant-attributes.js?v=313';
+import {variantKey,validateVariant,variantSummary,parseVariantLength,isRateUnit} from './variant-model.js?v=313';
 export function groupVariantImports(rows,products,today,flat,identity,amount,{replaceVariants=false}={}){
   const get=(r,...keys)=>{for(const k of keys){const found=Object.entries(r).find(([h,v])=>identity(h).replace(/_/g,' ')===identity(k)&&v!==null&&v!==undefined&&String(v).trim()!=='');if(found)return found[1];}return null;};
   const rejected=rows.filter(r=>get(r,'Ошибка импорта')).map(r=>({line:(Number.isInteger(Number(get(r,'Исходная строка')))?Number(get(r,'Исходная строка')):'—'),source:r,name:String(get(r,'Группа вариантов')||'Строка импорта'),sku:'',kind:'error',selected:false,applied:false,errors:[String(get(r,'Ошибка импорта'))]}));
