@@ -1,6 +1,6 @@
-import {replaceVariantUnits} from './variant-unit-tools.js?v=318';
-import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=318';
-import {parseVariants,validateVariant,roundMoney,parseVariantLength,unknownRodLength,isRateUnit} from './variant-model.js?v=318';
+import {replaceVariantUnits} from './variant-unit-tools.js?v=319';
+import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=319';
+import {parseVariants,validateVariant,roundMoney,parseVariantLength,unknownRodLength,isRateUnit} from './variant-model.js?v=319';
 const cleanAmount=value=>value===''||value==null?value:Number.isFinite(Number(value))&&Math.abs(Number(value)-roundMoney(value))<1e-8?roundMoney(value):value;
 export function calculateVariantMarkup(rows,percent){
   const n=Number(percent);if(!Number.isFinite(n)||n<0)throw new Error('Укажите неотрицательный процент наценки');
@@ -37,7 +37,7 @@ export function setupVariantEditor({el,state,esc,money,updateMargin=()=>{}}){
   function render(openId,first=false){
     const opened=new Set([...list.querySelectorAll('.variant-editor-card[open]')].map(c=>c.dataset.id));if(openId)opened.add(openId);
     list.innerHTML=rows.length?rows.map((r,i)=>{const s=summary(r,i);return '<details class="variant-editor-card" data-index="'+i+'" data-id="'+esc(r.id)+'" '+(opened.has(r.id)||(first&&i===0)?'open':'')+'><summary><span class="variant-card-number">'+(i+1)+'</span><span class="variant-card-caption"><b data-row-title>'+esc(s.name)+'</b><small data-row-info>'+esc(s.info)+'</small></span><span class="variant-edit-label">Изменить</span></summary><div class="variant-card-body"><div class="variant-editor-fields">'+
-      '<label>Продажа<select data-field="unit">'+Object.entries(unitNames).map(([v,n])=>'<option value="'+v+'" '+((r.unit||'piece')===v?'selected':'')+'>'+n+'</option>').join('')+'</select></label>'+
+      '<label>Единица продажи<select data-field="unit">'+Object.entries(unitNames).map(([v,n])=>'<option value="'+v+'" '+((r.unit||'piece')===v?'selected':'')+'>'+n+'</option>').join('')+'</select></label>'+
       '<label class="variant-field-name">Название / модель / размер<input data-field="name" aria-label="Название варианта" value="'+esc(r.name)+'" placeholder="Можно оставить пустым — составится из размера"></label>'+
       '<label>Наличие<select data-field="availability">'+[['order','Под заказ'],['in_stock','В наличии'],['out_of_stock','Нет в наличии']].map(([v,n])=>'<option value="'+v+'" '+((r.availability||'order')===v?'selected':'')+'>'+n+'</option>').join('')+'</select></label>'+
       '<label>Остаток размера<input data-field="stock_qty" aria-label="Остаток размера" type="number" min="0" step="0.001" value="'+esc(r.stock_qty??'')+'" placeholder="Не указан"></label>'+

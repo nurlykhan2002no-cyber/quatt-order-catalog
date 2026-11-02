@@ -3,7 +3,8 @@ import {localizedProductName,localizedCartName} from '../product-language.js';
 import {buildImportPlan} from '../admin-data.js';import {variantCartRow} from '../variant-model.js';
 test('names switch without changing model codes, with Russian fallback',()=>{
   const p={name:'Арматура А500С',name_kk:'А500С арматурасы'};
-  assert.equal(localizedProductName(p,true),'А500С арматурасы');assert.equal(localizedProductName(p,false),p.name);assert.equal(localizedProductName({...p,name_kk:' '},true),p.name);
+  assert.equal(localizedProductName(p,true),'А500С арматурасы');assert.equal(localizedProductName(p,false),p.name);assert.equal(localizedProductName({...p,name_kk:' '},true),'А500С арматурасы');
+  assert.equal(localizedProductName({name:'Неизвестный бренд',name_kk:''},true),'Неизвестный бренд');
 });
 test('existing and new carts change language while retaining selected size',()=>{
   const p={id:'p',name:'Труба',name_kk:'Құбыр'};

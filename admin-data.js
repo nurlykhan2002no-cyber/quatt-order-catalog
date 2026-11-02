@@ -1,4 +1,5 @@
-import {groupVariantImports} from "./variant-import.js?v=318";
+import {normalizeProductName} from './product-language.js?v=319';
+import {groupVariantImports} from "./variant-import.js?v=319";
 export const identity = value=>String(value??'').normalize('NFKC').trim().toLocaleLowerCase('ru').replace(/\s+/g,' ');
 export function priceAge(date, today=new Date()) {
   if(!date)return null;
@@ -24,7 +25,7 @@ export function buildFlatImportPlan(rows, products, today) {
     const item={line:index+2,source:row,errors:[],selected:false,applied:false};
     try {
       const sku=String(cell(row,['Артикул','SKU','Код товара','Код'])??'').trim();
-      const name=String(cell(row,['Название','Наименование','Название товара','name'])??'').trim();
+      const name=normalizeProductName(cell(row,['Название','Наименование','Название товара','name']));
       const brand=String(cell(row,['Бренд','brand'])??'').trim();
       const bySku=sku?products.filter(p=>identity(p.article)===identity(sku)):[];
       const byName=name?products.filter(p=>identity(p.name)===identity(name)&&(!brand||identity(p.brand)===identity(brand))):[];
