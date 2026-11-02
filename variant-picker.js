@@ -1,14 +1,14 @@
-import {localizedProductName} from './product-language.js?v=317';
-import {privatePricingText} from './private-pricing.js?v=317';
-import {variantDetails,fractionalUnit} from './variant-attributes.js?v=317';
-import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=317';
+import {localizedProductName} from './product-language.js?v=318';
+import {privatePricingText} from './private-pricing.js?v=318';
+import {variantDetails,fractionalUnit} from './variant-attributes.js?v=318';
+import {variantsOf,piecePrice,roundMoney,unknownRodLength,unitLabel,quantityUnitLabel,validVariantQty,isRateUnit} from './variant-model.js?v=318';
 export function bindVariantPicker({p,root,money,esc,specsHtml,kk,addCustomer,addSeller,whatsapp,message}){
   const variants=variantsOf(p).flatMap(v=>v.unit==='rod'&&v.length_options?.length?v.length_options.map(n=>({...v,id:v.id+'@length:'+n,length_m:n,name:v.name+' · '+n+' м'})): [v]);if(!variants.length)return;
   const host=root.querySelector('#variantPicker');if(!host)return;let selected=null;
   const rods=variants.every(v=>v.unit==='rod'),diameters=[...new Set(variants.map(v=>String(v.diameter||'')))];
   const hasThickness=rods&&variants.some(v=>v.thickness_mm);
   const lengthLabel=kk?'Ұзындығы нақтыланады':'Длина уточняется';
-  host.innerHTML='<h3>'+(rods?(kk?'Өлшемді таңдаңыз':'Выберите размер'):(kk?'Модельді / нұсқаны таңдаңыз':'Выберите модель / вариант'))+'</h3><div class="variant-pick-fields">'+(rods?'<label>Размер / диаметр, мм<select id="pickDiameter">'+diameters.map(d=>'<option value="'+esc(d)+'">'+esc(d)+' мм</option>').join('')+'</select></label>':'')+(hasThickness?'<label>'+(kk?'Қабырға қалыңдығы, мм':'Толщина стенки, мм')+'<select id="pickThickness"></select></label>':'')+'<label>'+(rods?kk?'Шыбық ұзындығы':'Длина изделия':kk?'Модель / нұсқа':'Модель / вариант')+'<select id="pickVariant"></select></label><label>'+(rods?(kk?'Шыбық саны':'Количество целых изделий'):(kk?'Саны':'Количество'))+'<input id="pickQty" type="number" min="1" max="100000" step="1" value="1" inputmode="numeric"></label></div><div id="pickCalculation" aria-live="polite"></div>';
+  host.innerHTML='<h3>'+(rods?(kk?'Өлшемді таңдаңыз':'Выберите размер'):(kk?'Модельді / нұсқаны таңдаңыз':'Выберите модель / вариант'))+'</h3><div class="variant-pick-fields">'+(rods?'<label>Размер / диаметр, мм<select id="pickDiameter">'+diameters.map(d=>'<option value="'+esc(d)+'">'+esc(d)+' мм</option>').join('')+'</select></label>':'')+(hasThickness?'<label>'+(kk?'Қабырға қалыңдығы, мм':'Толщина стенки, мм')+'<select id="pickThickness"></select></label>':'')+'<label>'+(rods?kk?'Шыбық ұзындығы':'Длина изделия':kk?'Модель / нұсқа':'Модель / вариант')+'<select id="pickVariant"></select></label><label>'+(rods?(kk?'Шыбық саны':'Количество целых изделий'):(kk?'Саны':'Количество'))+'<span class="quantity-stepper"><button type="button" id="pickQtyMinus" aria-label="Уменьшить количество">−</button><input id="pickQty" type="number" min="1" max="100000" step="1" value="1" inputmode="numeric"><button type="button" id="pickQtyPlus" aria-label="Увеличить количество">+</button></span></label></div><div id="pickCalculation" aria-live="polite"></div>';
   const $=id=>host.querySelector('#'+id),quantity=()=>Number($('pickQty').value);
   const rodWord=n=>kk?'шыбық':n%100>=11&&n%100<=14?'прутков':n%10===1?'пруток':n%10>=2&&n%10<=4?'прутка':'прутков';
   const wa=root.querySelector('#detailWhatsapp'),defaultWaText=wa?.textContent||'WhatsApp';
@@ -45,7 +45,7 @@ export function bindVariantPicker({p,root,money,esc,specsHtml,kk,addCustomer,add
     $('pickVariant').innerHTML=rows.map(v=>'<option value="'+esc(v.id)+'">'+esc(rods?(unknownRodLength(v)?lengthLabel:v.length_m+' м'):v.name.replace(/Длина уточняется/gi,lengthLabel)+' · '+unitLabel(v.unit,kk)+(v.unit==='coil'&&!unknownRodLength(v)?' · '+v.length_m+' м':''))+(!rods&&variantDetails(v)?' · '+esc(variantDetails(v)):'')+(v.availability==='out_of_stock'?(kk?' — жоқ':' — нет в наличии'):'')+'</option>').join('');update();
   }
   function dimensions(){if(hasThickness){const walls=[...new Set(variants.filter(v=>String(v.diameter||'')===$('pickDiameter').value).map(v=>String(v.thickness_mm||'')))];$('pickThickness').closest('label').hidden=walls.every(t=>!t.trim());$('pickThickness').innerHTML=walls.map(t=>'<option value="'+esc(t)+'">'+esc(t|| (kk?'Көрсетілмеген':'Не указана'))+'</option>').join('');}options();}
-  if(rods)$('pickDiameter').onchange=dimensions;if(hasThickness)$('pickThickness').onchange=options;$('pickVariant').onchange=update;$('pickQty').oninput=update;dimensions();
+  if(rods)$('pickDiameter').onchange=dimensions;if(hasThickness)$('pickThickness').onchange=options;$('pickVariant').onchange=update;$('pickQty').oninput=update;for(const [id,delta] of [['pickQtyMinus',-1],['pickQtyPlus',1]])$(id).onclick=()=>{const input=$('pickQty');if(input.disabled)return;const min=Number(input.min)||1,max=Number(input.max)||100000,current=Number(input.value);input.value=String(Math.round(Math.min(max,Math.max(min,(Number.isFinite(current)?current:min)+delta))*1000)/1000);update();};dimensions();
   root.querySelector('#detailCustomerAdd').onclick=()=>{if(!root.querySelector('#detailCustomerAdd').disabled)addCustomer(selected,quantity());};
   const seller=root.querySelector('#addToCartFromDetail');if(seller)seller.onclick=()=>{if(!seller.disabled)addSeller(selected,quantity());};
   if(wa)wa.onclick=()=>{

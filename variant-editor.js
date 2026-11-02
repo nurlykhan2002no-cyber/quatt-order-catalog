@@ -1,6 +1,6 @@
-import {replaceVariantUnits} from './variant-unit-tools.js?v=317';
-import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=317';
-import {parseVariants,validateVariant,roundMoney,parseVariantLength,unknownRodLength,isRateUnit} from './variant-model.js?v=317';
+import {replaceVariantUnits} from './variant-unit-tools.js?v=318';
+import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=318';
+import {parseVariants,validateVariant,roundMoney,parseVariantLength,unknownRodLength,isRateUnit} from './variant-model.js?v=318';
 const cleanAmount=value=>value===''||value==null?value:Number.isFinite(Number(value))&&Math.abs(Number(value)-roundMoney(value))<1e-8?roundMoney(value):value;
 export function calculateVariantMarkup(rows,percent){
   const n=Number(percent);if(!Number.isFinite(n)||n<0)throw new Error('Укажите неотрицательный процент наценки');
