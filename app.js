@@ -1,10 +1,10 @@
-import {privatePricingText} from './private-pricing.js?v=316';
-import {setupProductEditorControls} from './product-editor-controls.js?v=316';
-import {localizedProductName,localizedCartName} from './product-language.js?v=316';
-import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=316';
-import {bindDialogBackdrop} from "./dialog-dismiss.js?v=316";
-import {variantsOf,variantSummary,parseVariants,variantCartRow,cartKey as lineKey,roundMoney,unitLabel,quantityUnitLabel,isRateUnit} from "./variant-model.js?v=316";
-import {bindVariantPicker} from "./variant-picker.js?v=316";
+import {privatePricingText} from './private-pricing.js?v=317';
+import {setupProductEditorControls} from './product-editor-controls.js?v=317';
+import {localizedProductName,localizedCartName} from './product-language.js?v=317';
+import {editorAttributeFields,saleUnits,variantDetails} from './variant-attributes.js?v=317';
+import {bindDialogBackdrop} from "./dialog-dismiss.js?v=317";
+import {variantsOf,variantSummary,parseVariants,variantCartRow,cartKey as lineKey,roundMoney,unitLabel,quantityUnitLabel,isRateUnit} from "./variant-model.js?v=317";
+import {bindVariantPicker} from "./variant-picker.js?v=317";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_BUCKET } from "./config.js";
 
@@ -162,7 +162,7 @@ function loadLocal(){try{state.favorites=JSON.parse(localStorage.getItem("quatt-
 async function loadRole(){if(!state.session){state.role="guest";state.email="";return}state.email=state.session.user.email||"";const {data,error}=await supabase.rpc("catalog_role");if(error){console.warn(error);state.role="seller";return}state.role=data||"seller"}
 async function ensureProductTools(){
   if(productTools)return;
-  if(!productToolsPromise)productToolsPromise=import("./product-tools.js?v=316").then(({setupProductTools})=>{
+  if(!productToolsPromise)productToolsPromise=import("./product-tools.js?v=317").then(({setupProductTools})=>{
     productTools=setupProductTools({el,state,canEditProducts,openProduct,renderFormImages,renderRelationOptions,setSelectedValues,updateMargin,renderBadgePreview,publicUrl,imgsFor,decodeImageSafely,toast,supabase,ensureExcel,loadData,addCategory,logProductChange,buildProductChanges,money,esc,render});
   }).catch(e=>{console.warn(e);productToolsPromise=null;$("productDraftStatus").textContent="Автосохранение недоступно: обновите страницу при подключении к интернету.";toast("Не удалось загрузить инструменты добавления товаров.",true)});
   return productToolsPromise;
@@ -251,7 +251,7 @@ function renderProducts(){
   const arr=filteredProducts();el.resultCount.textContent=uiLang()==="kk"?`${arr.length} тауар`:`${arr.length} ${arr.length===1?"товар":"товаров"}`;el.stateBox.classList.toggle("hidden",arr.length>0);el.catalogGrid.classList.toggle("hidden",arr.length===0);if(!arr.length){el.stateBox.innerHTML=`<h2>${t("Ничего не найдено")}</h2><p>${t("Измени фильтры или напиши нам в WhatsApp — найдём товар под заказ.")}</p><button class="whatsapp-btn" id="emptyWhatsapp">${t("Написать в WhatsApp")}</button>`;$("emptyWhatsapp").onclick=()=>openWhatsapp(whatsappMessage("missing"));return}el.catalogGrid.innerHTML=arr.map((p,i)=>productCard(p,false,i<2)).join("");bindProductCards(el.catalogGrid);renderRecent();
 }
 function renderBanners(){const rows=state.banners.filter(b=>b.active!==false);el.bannerStrip.classList.toggle("hidden",!rows.length);el.bannerStrip.innerHTML=rows.map(b=>`<button class="hero-banner" data-banner-cat="${b.category_id||"all"}"><strong>${esc(b.title)}</strong>${b.subtitle?`<span>${esc(b.subtitle)}</span>`:""}</button>`).join("");el.bannerStrip.querySelectorAll("[data-banner-cat]").forEach(b=>b.onclick=()=>{setCat(b.dataset.bannerCat);window.scrollTo({top:0,behavior:"smooth"})})}
-function renderRecent(){const rows=state.recent.map(id=>state.products.find(p=>p.id===id)).filter(p=>p&&p.archived!==true&&(canViewInternal()||p.active!==false)).slice(0,8);el.recentSection.classList.toggle("hidden",!rows.length);el.recentGrid.innerHTML=rows.map(p=>productCard(p,true)).join("");bindProductCards(el.recentGrid)}
+function renderRecent(){const rows=state.recent.map(id=>state.products.find(p=>p.id===id)).filter(p=>p&&p.archived!==true&&(canViewInternal()||p.active!==false)).slice(0,4);el.recentSection.classList.toggle("hidden",!rows.length);el.recentGrid.innerHTML=rows.map(p=>productCard(p,true)).join("");bindProductCards(el.recentGrid)}
 function render(){renderAuth();renderCategories();renderFilters();renderBanners();renderProducts();renderLocalBadges();applyLanguageUI();productTools?.catalogLoaded()}
 
 function updateSeo(p=null){const title=p?`${productName(p)} — QUATT QURYLYS`:`QUATT QURYLYS — Каталог товаров`;document.title=title;document.querySelector('meta[property="og:title"]')?.setAttribute("content",title);const desc=p?`${productName(p)}${p.brand?" · "+p.brand:""}. ${availabilityLabel(p.availability||"order")}. QUATT QURYLYS, Атырау.`:"Строительные товары QUATT QURYLYS в Атырау.";document.querySelector('meta[name="description"]')?.setAttribute("content",desc);document.querySelector('meta[property="og:description"]')?.setAttribute("content",desc)}
@@ -576,7 +576,7 @@ async function openDashboard(refreshOnly=false){
     renderProducts();
   }catch(e){el.dashboardContent.innerHTML=`<p class="error-text">${esc(e.message||e)}</p>`}
 }
-let bulkTools=null; async function openBulk(){if(!canEditProducts())return;try{if(!bulkTools){const {setupBulkTools}=await import("./bulk-tools.js?v=316");bulkTools=setupBulkTools({el,state,canEditProducts,money,esc,catName,imgsFor,publicUrl,roundRetail,supabase,loadData,logProductChange,buildProductChanges});}bulkTools.open();}catch(e){toast(e.message||"Не удалось открыть массовое редактирование",true)}}
+let bulkTools=null; async function openBulk(){if(!canEditProducts())return;try{if(!bulkTools){const {setupBulkTools}=await import("./bulk-tools.js?v=317");bulkTools=setupBulkTools({el,state,canEditProducts,money,esc,catName,imgsFor,publicUrl,roundRetail,supabase,loadData,logProductChange,buildProductChanges});}bulkTools.open();}catch(e){toast(e.message||"Не удалось открыть массовое редактирование",true)}}
 
 function excelRows(){return state.products.flatMap(p=>variantsOf(p).length?variantsOf(p).map(v=>({"Группа вариантов":p.name,"Название на казахском":p.name_kk||"","Артикул карточки":p.article||"",Категория:catName(p.category_id),Бренд:p.brand||"","Артикул варианта":v.id,"Единица продажи":(saleUnits[v.unit]||"Штука"),Вариант:v.name,"Характеристики варианта":v.specs||"","Остаток размера":v.stock_qty??"",...Object.fromEntries(editorAttributeFields.map(([key,label])=>[label,v[key]??""])),"Размер / Ду, мм":v.diameter||"","Длина прутка, м":v.length_unknown?"Длина уточняется":v.length_options?.join("/")||v.length_m||"",Цена:isRateUnit(v)?v.price_per_m:v.price,Закуп:p.variant_costs?.[v.id]?.cost??"",Наличие:availabilityLabel(v.availability||"order"),Поставщик:p.supplier||"",Дата_проверки:p.checked_date||""})):[({Артикул:p.article||"",Название:p.name,"Название на казахском":p.name_kk||"",Категория:catName(p.category_id),Бренд:p.brand||"",Цена:Number(p.price||0),Закуп:Number(p.cost||0),Наценка:Number(p.markup||0),Наличие:availabilityLabel(p.availability||"order"),Остаток:p.stock_qty??"",Архив:p.archived?"Да":"Нет",Характеристики:p.specs||"",Поставщик:p.supplier||"",Адрес_поставщика:p.supplier_address||"",Контакт_поставщика:p.supplier_contact||"",Дата_проверки:p.checked_date||"",Фото:imgsFor(p.id).map(i=>publicUrl(i.image_path)).join("; ")})])}
 async function downloadWorkbook(rows,name,sheet="Товары"){try{await ensureExcel();}catch(e){toast(e.message,true);return;}const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),sheet);XLSX.writeFile(wb,name)}
@@ -708,7 +708,7 @@ function createLaunchSplash(){
   wrap.className='launch-splash';
   wrap.innerHTML=`
     <div class="launch-splash__inner">
-      <img class="launch-splash__logo" src="./quatt-app-192.png?v=316" alt="QUATT">
+      <img class="launch-splash__logo" src="./quatt-app-192.png?v=317" alt="QUATT">
       <div class="launch-splash__brand">QUATT QURYLYS</div>
       <div class="launch-splash__sub">${state.lang==="kk"?"Жөндеу мен құрылысқа қажеттінің бәрі":"Всё для ремонта и строительства"}</div><div class="launch-splash__loading" role="status">${state.lang==="kk"?"Каталог жүктелуде…":"Загружаем каталог…"}</div>
       <div class="launch-splash__dots" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -878,6 +878,6 @@ async function init(){
   }
   // Show the catalogue immediately when its data is ready.
   hideLaunchSplash();
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=316").catch(()=>{})
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js?v=317").catch(()=>{})
 }
 init();
